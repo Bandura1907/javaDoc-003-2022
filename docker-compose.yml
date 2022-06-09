@@ -1,0 +1,29 @@
+version: "3"
+
+services:
+  mysqldb:
+    image: mysql:5.7
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=003-2022
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db:/var/lib/mysql
+
+
+  app:
+    depends_on:
+      - mysqldb
+    build: ./
+    restart: on-failure
+    links:
+      - mysqldb:app_db
+    ports:
+      - "8888:8888"
+    stdin_open: true
+    tty: true
+
+volumes:
+  db:
