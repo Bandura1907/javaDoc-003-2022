@@ -71,11 +71,14 @@ public class UserService {
         } else return "Passwords do not match";
     }
 
-    public User changeInfoUser(int id, InfoUserRequest infoUserRequest) {
+    public User changeInfoUser(int id, InfoUserRequest infoUserRequest) throws Exception {
         User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
         Set<Role> roleSet = addRoles(infoUserRequest.getRoles());
 
-        user.setLogin(infoUserRequest.getLogin() == null ? user.getLogin() : infoUserRequest.getLogin());
+        if (!userRepository.existsByLogin(infoUserRequest.getLogin())) {
+            user.setLogin(infoUserRequest.getLogin() == null ? user.getLogin() : infoUserRequest.getLogin());
+        } else throw new Exception("User login exist");
+
         user.setName(infoUserRequest.getName() == null ? user.getName() : infoUserRequest.getName());
         user.setLastName(infoUserRequest.getLastName() == null ? user.getLastName() : infoUserRequest.getLastName());
         user.setSurName(infoUserRequest.getSurName() == null ? user.getSurName() : infoUserRequest.getSurName());
@@ -92,7 +95,7 @@ public class UserService {
         if (user.isNonBlocked()) {
             user.setNonBlocked(false);
             userRepository.save(user);
-            return "User " + id + "blocked";
+            return "User " + id + " blocked";
         } else {
             user.setNonBlocked(true);
             userRepository.save(user);

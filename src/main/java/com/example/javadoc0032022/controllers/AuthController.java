@@ -11,6 +11,12 @@ import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.security.jwt.JwtUtils;
 import com.example.javadoc0032022.security.service.UserDetailsImpl;
 import com.example.javadoc0032022.services.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +39,7 @@ import java.util.stream.Collectors;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/auth")
+@Tag(name = "AuthController", description = "Контролер управления авторизацией")
 public class AuthController {
     static final long MIN1 = 60000;
     static final long MIN10 = 600000;
@@ -44,58 +51,73 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
     private RoleRepository roleRepository;
 
+
+    @Operation(summary = "Метод для авторизации пользователя", description = "После 3 попыток неудачной авторизации блокирует юзера на 1 минуту," +
+            "4 попытки - 10 минут, 5 и больше - 1 час")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Авторизирован",
+                    content = @Content(schema = @Schema(implementation = JwtResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Неавторизирован",
+                    content = @Content(schema = @Schema(implementation = MessageResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Юзер не найден",
+                    content = @Content(schema = @Schema(implementation = MessageResponse.class)))
+    })
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
-//        final Optional<User> user = userService.findByLogin(loginRequest.getLogin());
-//        if (user.isEmpty()) {
-//            return new ResponseEntity<>("Invalid Username and Password", HttpStatus.UNAUTHORIZED);
-//        }
-//
-//
-//        if (passwordEncoder.matches(loginRequest.getPassword(), user.get().getPassword()) && user.get().getBlockTime() <= Calendar.getInstance().getTimeInMillis()) {
-//            if (!user.get().isNonBlocked()) {
-//                return new ResponseEntity<>(new MessageResponse("Locked"), HttpStatus.UNAUTHORIZED);
-//            } else {
-//                user.get().setLoginAttempts(0);
-//                user.get().setNonBlocked(true);
-//                userService.save(user.get());
-                return authenticateUser(loginRequest.getLogin(), loginRequest.getPassword());
-//            }
-//
-//        } else {
-//
-//
-////            if (!user.get().isNonBlocked()) {
-////                return new ResponseEntity<>(new MessageResponse("Account locked"), HttpStatus.UNAUTHORIZED);
-////            }
-//            int attempts = user.get().getLoginAttempts() + 1;
-//            user.get().setLoginAttempts(attempts);
-//            if (user.get().getLoginAttempts() > 3) {
-//                user.get().setBlockTime(Calendar.getInstance().getTimeInMillis() + MIN1);
-//                user.get().setNonBlocked(false);
-//            } else if (user.get().getLoginAttempts() > 4) {
-//                user.get().setBlockTime(Calendar.getInstance().getTimeInMillis() + MIN10);
-//                user.get().setNonBlocked(false);
-//            } else if (user.get().getLoginAttempts() > 5) {
-//                user.get().setBlockTime(Calendar.getInstance().getTimeInMillis() + HOUR1);
-//                user.get().setNonBlocked(false);
-//            }
-//
-//            userService.save(user.get());
-//            return new ResponseEntity<>(new MessageResponse("Attempts " + user.get().getLoginAttempts()), HttpStatus.UNAUTHORIZED);
-//        }
+        final Optional<User> user = userService.findByLogin(loginRequest.getLogin());
+        if (user.isEmpty()) {
+            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
+        }
+
+
+        if (passwordEncoder.matches(loginRequest.getPassword(), user.get().getPassword()) && user.get().getBlockTime() <= Calendar.getInstance().getTimeInMillis()) {
+            user.get().setLoginAttempts(0);
+            user.get().setNonBlocked(true);
+            userService.save(user.get());
+            return authenticateUser(loginRequest.getLogin(), loginRequest.getPassword());
+
+        } else {
+            System.out.println(new Date(user.get().getBlockTime()));
+            if (!user.get().isNonBlocked() && Calendar.getInstance().getTimeInMillis() <= user.get().getBlockTime()) {
+                return new ResponseEntity<>(new MessageResponse("Locked"), HttpStatus.UNAUTHORIZED);
+            }
+
+            int attempts = user.get().getLoginAttempts() + 1;
+            user.get().setLoginAttempts(attempts);
+            if (user.get().getLoginAttempts() == 4) {
+                user.get().setBlockTime(Calendar.getInstance().getTimeInMillis() + MIN1);
+                user.get().setNonBlocked(false);
+            } else if (user.get().getLoginAttempts() == 5) {
+                user.get().setBlockTime(Calendar.getInstance().getTimeInMillis() + MIN10);
+                user.get().setNonBlocked(false);
+            } else if (user.get().getLoginAttempts() >= 6) {
+                user.get().setBlockTime(Calendar.getInstance().getTimeInMillis() + HOUR1);
+                user.get().setNonBlocked(false);
+            }
+
+            userService.save(user.get());
+            return new ResponseEntity<>(new MessageResponse("Attempts " + user.get().getLoginAttempts()), HttpStatus.UNAUTHORIZED);
+        }
     }
 
+    @Operation(summary = "Метод для регестрации пользователя")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Юзер зарегестрирован",
+                    content = @Content(schema = @Schema(implementation = JwtResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Юзер с таким логином уже зарегестрирован или " +
+                    "пароль с логином не должны совпадать",
+                    content = @Content(schema = @Schema(implementation = MessageResponse.class)))
+    })
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         if (userService.existsByLogin(registerRequest.getLogin())) {
             return ResponseEntity.badRequest()
-                    .body("User " + registerRequest.getLogin() + " already register");
+                    .body(new MessageResponse("User " + registerRequest.getLogin() + " already register"));
         }
 
         if (registerRequest.getLogin().equals(registerRequest.getPassword())) {
             return ResponseEntity.badRequest()
-                    .body("username must not match password");
+                    .body(new MessageResponse("username must not match password"));
         }
 
         User user = new User();

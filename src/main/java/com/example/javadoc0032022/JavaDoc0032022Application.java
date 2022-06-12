@@ -7,6 +7,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @SpringBootApplication
 public class JavaDoc0032022Application {
@@ -27,6 +29,18 @@ public class JavaDoc0032022Application {
 
             if (roleRepository.findByRole(ERole.ROLE_EMPLOYEE).isEmpty())
                 roleRepository.save(new Role(ERole.ROLE_EMPLOYEE));
+        };
+    }
+
+    @Bean
+    WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**").allowedMethods("*")
+                        .allowedHeaders("*")
+                        .allowedOrigins("*");
+            }
         };
     }
 }
