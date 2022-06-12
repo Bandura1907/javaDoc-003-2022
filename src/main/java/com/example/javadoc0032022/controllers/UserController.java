@@ -19,14 +19,29 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/user")
 @AllArgsConstructor
-@Tag(name = "UserController", description = "Контролер управления юзерами")
+@Tag(name = "UserController", description = "Контролер управления юзерами (Методы доступны только после авторизации)")
 public class UserController {
 
     private UserService userService;
+
+    @Operation(summary = "Метод получения всех юзеров")
+    @ApiResponse(responseCode = "200", description = "Получены все юзеры")
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(userService.findAll());
+    }
+
+    @Operation(summary = "Метод получения юзера по id")
+    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = User.class)))
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUser(@Parameter(description = "ID user", required = true) @PathVariable int id) {
+        return ResponseEntity.ok(userService.findById(id));
+    }
 
     @Operation(summary = "Метод блокировки юзера (Доступен только админу)", description = "Блокирование пользователя по ID. " +
             "Если юзер забанен - метод разблокирует юзера. Если юзер разблокирован - метод забанет юзера.")

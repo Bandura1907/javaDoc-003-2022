@@ -146,7 +146,7 @@ public class AuthController {
         return authenticateUser(registerRequest.getLogin(), registerRequest.getPassword());
     }
 
-    private ResponseEntity<?> authenticateUser(String login, String password) {
+    private ResponseEntity<JwtResponse> authenticateUser(String login, String password) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(login, password));
 
