@@ -35,6 +35,6 @@ services:
     build: ./
     restart: on-failure
     extra_hosts:
-      - "host.docker.internal:172.17.0.1"
+      - "host.docker.internal:host-gateway"
     ports:
       - "8888:8888"
