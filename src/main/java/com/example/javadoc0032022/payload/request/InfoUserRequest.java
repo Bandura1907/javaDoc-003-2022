@@ -30,4 +30,7 @@ public class InfoUserRequest {
 
     @Schema(description = "телефон", example = "+380994354323")
     private String phoneNumber;
+
+    private Integer countDocuments;
+
 }

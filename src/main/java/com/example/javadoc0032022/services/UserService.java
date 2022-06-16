@@ -116,6 +116,9 @@ public class UserService {
         user.setEmail(infoUserRequest.getEmail() == null ? user.getEmail() : infoUserRequest.getEmail());
         user.setPhoneNumber(infoUserRequest.getPhoneNumber() == null ? user.getPhoneNumber() : infoUserRequest.getPhoneNumber());
         user.setRoles(infoUserRequest.getRoles() == null ? user.getRoles() : roleSet);
+        user.setCountDocuments(infoUserRequest.getCountDocuments() == null ? user.getCountDocuments() : infoUserRequest.getCountDocuments());
+//        user.setExistEcp(infoUserRequest.isExistEcp() || user.isExistEcp());
+//        user.setPasswordExpired(infoUserRequest.isPasswordExpired() || user.isPasswordExpired());
 
         userRepository.save(user);
         return user;

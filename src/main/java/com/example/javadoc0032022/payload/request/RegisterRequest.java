@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import javax.validation.constraints.Email;
-import javax.validation.constraints.Pattern;
 import java.util.Set;
 
 @Data
