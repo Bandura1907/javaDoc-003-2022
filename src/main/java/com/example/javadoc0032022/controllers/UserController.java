@@ -4,6 +4,7 @@ import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.payload.request.ChangePasswordRequest;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
 import com.example.javadoc0032022.payload.response.MessageResponse;
+import com.example.javadoc0032022.payload.response.UserResponse;
 import com.example.javadoc0032022.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,9 +38,9 @@ public class UserController {
     }
 
     @Operation(summary = "Метод получения юзера по id")
-    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = User.class)))
+    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UserResponse.class)))
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUser(@Parameter(description = "ID user", required = true) @PathVariable int id) {
+    public ResponseEntity<UserResponse> getUser(@Parameter(description = "ID user", required = true) @PathVariable int id) {
         return ResponseEntity.ok(userService.findById(id));
     }
 

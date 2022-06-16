@@ -12,6 +12,7 @@ public class JwtResponse {
     private String token;
     private String login;
     private List<String> roles;
+    private String refreshToken;
     private String name;
     private String lastName;
     private String surName;
@@ -19,7 +20,7 @@ public class JwtResponse {
     private String phoneNumber;
     private boolean isNonBlocked;
 
-    public JwtResponse(int id, String token, String login, List<String> roles, String name, String lastName, String surName, String email, String phoneNumber, boolean isNonBlocked) {
+    public JwtResponse(int id, String token, String login, List<String> roles,String refreshToken, String name, String lastName, String surName, String email, String phoneNumber, boolean isNonBlocked) {
         this.id = id;
         this.token = token;
         this.login = login;
@@ -30,5 +31,6 @@ public class JwtResponse {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.isNonBlocked = isNonBlocked;
+        this.refreshToken = refreshToken;
     }
 }

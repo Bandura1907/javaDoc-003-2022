@@ -1,14 +1,19 @@
 package com.example.javadoc0032022.controllers;
 
+import com.example.javadoc0032022.exception.TokenRefreshException;
 import com.example.javadoc0032022.models.ERole;
+import com.example.javadoc0032022.models.RefreshToken;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.payload.request.LoginRequest;
 import com.example.javadoc0032022.payload.request.RegisterRequest;
+import com.example.javadoc0032022.payload.request.TokenRefreshRequest;
 import com.example.javadoc0032022.payload.response.JwtResponse;
 import com.example.javadoc0032022.payload.response.MessageResponse;
+import com.example.javadoc0032022.payload.response.TokenRefreshResponse;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.security.jwt.JwtUtils;
+import com.example.javadoc0032022.security.service.RefreshTokenService;
 import com.example.javadoc0032022.security.service.UserDetailsImpl;
 import com.example.javadoc0032022.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,7 +28,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -50,6 +54,7 @@ public class AuthController {
     private UserService userService;
     private PasswordEncoder passwordEncoder;
     private RoleRepository roleRepository;
+    private RefreshTokenService refreshTokenService;
 
 
     @Operation(summary = "Метод для авторизации пользователя", description = "После 3 попыток неудачной авторизации блокирует юзера на 1 минуту," +
@@ -72,27 +77,27 @@ public class AuthController {
 
         if (passwordEncoder.matches(loginRequest.getPassword(), user.get().getPassword()) && user.get().getBlockTime() <= Calendar.getInstance().getTimeInMillis()) {
             user.get().setLoginAttempts(0);
-            user.get().setNonBlocked(true);
+            user.get().setTimeLocked(false);
             userService.save(user.get());
             return authenticateUser(loginRequest.getLogin(), loginRequest.getPassword());
 
         } else {
             System.out.println(new Date(user.get().getBlockTime()));
-            if (!user.get().isNonBlocked() && Calendar.getInstance().getTimeInMillis() <= user.get().getBlockTime()) {
-                return new ResponseEntity<>(new MessageResponse("Locked"), HttpStatus.UNAUTHORIZED);
+            if (user.get().isTimeLocked() && Calendar.getInstance().getTimeInMillis() <= user.get().getBlockTime()) {
+                return new ResponseEntity<>(new MessageResponse("time locke"), HttpStatus.UNAUTHORIZED);
             }
 
             int attempts = user.get().getLoginAttempts() + 1;
             user.get().setLoginAttempts(attempts);
             if (user.get().getLoginAttempts() == 4) {
                 user.get().setBlockTime(Calendar.getInstance().getTimeInMillis() + MIN1);
-                user.get().setNonBlocked(false);
+                user.get().setTimeLocked(true);
             } else if (user.get().getLoginAttempts() == 5) {
                 user.get().setBlockTime(Calendar.getInstance().getTimeInMillis() + MIN10);
-                user.get().setNonBlocked(false);
+                user.get().setTimeLocked(true);
             } else if (user.get().getLoginAttempts() >= 6) {
                 user.get().setBlockTime(Calendar.getInstance().getTimeInMillis() + HOUR1);
-                user.get().setNonBlocked(false);
+                user.get().setTimeLocked(true);
             }
 
             userService.save(user.get());
@@ -129,6 +134,7 @@ public class AuthController {
         user.setEmail(registerRequest.getEmail());
         user.setPhoneNumber(registerRequest.getPhoneNumber());
         user.setNonBlocked(true);
+        user.setTimeLocked(false);
 
         Set<Role> roleSet = new HashSet<>();
         Set<String> strRoles = registerRequest.getRole();
@@ -158,10 +164,13 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
+
         return ResponseEntity.ok(new JwtResponse(userDetails.getId(),
                 jwt,
                 userDetails.getLogin(),
                 roles,
+                refreshToken.getToken(),
                 userDetails.getName(),
                 userDetails.getLastName(),
                 userDetails.getSurName(),
@@ -170,6 +179,32 @@ public class AuthController {
                 userDetails.isNonBlocked())
         );
     }
+
+    @Operation(summary = "Метод обновления токена")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Токен обновлен",
+            content = @Content(schema = @Schema(implementation = TokenRefreshResponse.class)))
+    })
+    @PostMapping("/refresh_token")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtUtils.generateTokenFromUsername(user.getLogin());
+                    return ResponseEntity.ok(new TokenRefreshResponse(token, requestRefreshToken));
+                })
+                .orElseThrow(() -> new TokenRefreshException(requestRefreshToken,
+                        "Refresh token is not in database!"));
+    }
+
+//    @PostMapping("/logout")
+//    public ResponseEntity<?> logoutUser(@Valid @RequestBody LogOutRequest logOutRequest) {
+//        refreshTokenService.deleteByUserId(logOutRequest.getUserId());
+//        return ResponseEntity.ok(new MessageResponse("Log out successful!"));
+//    }
 
 }
 

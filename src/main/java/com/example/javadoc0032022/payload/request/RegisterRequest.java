@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import javax.validation.constraints.Email;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.Pattern;
 import java.util.Set;
 
 @Data
@@ -14,16 +14,16 @@ public class RegisterRequest {
     private String login;
 
     @Schema(description = "Пароль", example = "password13242")
-    @Size(min = 12)
+//    @Pattern(regexp = "^((?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])){4,12}$", message = "max length 12")
     private String password;
 
-    @Schema(description = "Роль", example = "[\"admin\"...]")
+    @Schema(description = "Роль", example = "['admin']")
     private Set<String> role;
 
     @Schema(description = "Имя", example = "Ivan")
     private String name;
 
-    @Schema(description = "Фамилия", example = "IVanov")
+    @Schema(description = "Фамилия", example = "Ivanov")
     private String lastName;
 
     @Schema(description = "Очество", example = "Ivanovich")

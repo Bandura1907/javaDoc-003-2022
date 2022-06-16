@@ -24,6 +24,11 @@ public class UserDetailsImpl implements UserDetails {
     private String surName;
     private String email;
     private String phoneNumber;
+    private int countDocuments;
+    private boolean existEcp;
+
+    private boolean isTimeLocked;
+    private boolean isPasswordExpired;
     private boolean isNonBlocked;
     private int loginAttempts;
     private long blockTime;
@@ -33,7 +38,8 @@ public class UserDetailsImpl implements UserDetails {
                 .map(role -> new SimpleGrantedAuthority(role.getRole().name()))
                 .collect(Collectors.toList());
         return new UserDetailsImpl(user.getId(), user.getLogin(), user.getPassword(), authorities, user.getName(),
-                user.getLastName(), user.getSurName(), user.getEmail(), user.getPhoneNumber(), user.isNonBlocked(), user.getLoginAttempts(),
+                user.getLastName(), user.getSurName(), user.getEmail(), user.getPhoneNumber(), user.getCountDocuments(),
+                user.isExistEcp(), user.isTimeLocked(), user.isPasswordExpired(), user.isNonBlocked(), user.getLoginAttempts(),
                 user.getBlockTime());
     }
 

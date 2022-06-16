@@ -4,6 +4,7 @@ import com.example.javadoc0032022.models.ERole;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
+import com.example.javadoc0032022.payload.response.UserResponse;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -36,9 +37,29 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User findById(int id) {
+    public UserResponse findById(int id) {
         Optional<User> user = userRepository.findById(id);
-        return user.orElse(null);
+        Set<String> roles = new HashSet<>();
+        if (user.isPresent()) {
+            for (Role role : user.get().getRoles()) {
+                switch (role.getRole()) {
+                    case ROLE_USER:
+                        roles.add("user");
+                        break;
+                    case ROLE_ADMIN:
+                        roles.add("admin");
+                        break;
+                    case ROLE_EMPLOYEE:
+                        roles.add("employee");
+                        break;
+                }
+            }
+            return new UserResponse(user.get().getId(), user.get().getLogin(), user.get().getPassword(), roles, user.get().getName(),
+                    user.get().getLastName(), user.get().getSurName(), user.get().getEmail(), user.get().getPhoneNumber(),
+                    user.get().getCountDocuments(), user.get().isExistEcp(), user.get().isTimeLocked(), user.get().isPasswordExpired(),
+                    user.get().isNonBlocked(), user.get().getLoginAttempts(), user.get().getBlockTime());
+        } else return new UserResponse();
+
     }
 
     public Optional<User> findByLogin(String login) {

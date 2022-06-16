@@ -19,6 +19,12 @@ public class JwtUtils {
     @Value("${doc.app.jwtExpirationMs}")
     private int jwtExpirationMs;
 
+    public String generateTokenFromUsername(String login) {
+        return Jwts.builder().setSubject(login).setIssuedAt(new Date())
+                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs)).signWith(SignatureAlgorithm.HS512, jwtSecret)
+                .compact();
+    }
+
     public String generateJwtToken(Authentication authentication) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
