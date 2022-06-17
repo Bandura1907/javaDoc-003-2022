@@ -1,6 +1,6 @@
 package com.example.javadoc0032022.security.jwt;
 
-import com.example.javadoc0032022.security.service.UserDetailsImpl;
+import com.example.javadoc0032022.models.User;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +26,7 @@ public class JwtUtils {
     }
 
     public String generateJwtToken(Authentication authentication) {
-        UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
+        User userPrincipal = (User) authentication.getPrincipal();
 
         return Jwts.builder()
                 .setSubject(userPrincipal.getLogin())

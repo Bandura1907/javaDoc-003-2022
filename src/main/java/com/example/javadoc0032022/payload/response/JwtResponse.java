@@ -20,7 +20,8 @@ public class JwtResponse {
     private String phoneNumber;
     private boolean isNonBlocked;
 
-    public JwtResponse(int id, String token, String login, List<String> roles,String refreshToken, String name, String lastName, String surName, String email, String phoneNumber, boolean isNonBlocked) {
+    public JwtResponse(int id, String token, String login, List<String> roles,String refreshToken, String name,
+                       String lastName, String surName, String email, String phoneNumber, boolean isNonBlocked) {
         this.id = id;
         this.token = token;
         this.login = login;

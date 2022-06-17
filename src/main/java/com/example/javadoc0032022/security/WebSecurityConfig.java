@@ -2,7 +2,9 @@ package com.example.javadoc0032022.security;
 
 import com.example.javadoc0032022.security.jwt.AuthEntryPointJwt;
 import com.example.javadoc0032022.security.jwt.AuthTokenFilter;
+import com.example.javadoc0032022.security.service.UserDetailsImpl;
 import com.example.javadoc0032022.security.service.UserDetailsServiceImpl;
+import com.example.javadoc0032022.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationManager;

@@ -3,6 +3,7 @@ package com.example.javadoc0032022.models;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
 
 import javax.persistence.*;
 
@@ -22,4 +23,5 @@ public class Role {
     public Role(ERole role) {
         this.role = role;
     }
+
 }

@@ -1,5 +1,6 @@
 package com.example.javadoc0032022.services;
 
+import com.example.javadoc0032022.models.ConfirmationToken;
 import com.example.javadoc0032022.models.ERole;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
@@ -8,22 +9,26 @@ import com.example.javadoc0032022.payload.response.UserResponse;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
 public class UserService {
 
     private UserRepository userRepository;
+
+    private ConfirmationTokenService confirmationTokenService;
     private PasswordEncoder passwordEncoder;
     private RoleRepository roleRepository;
+
 
     public boolean existsByLogin(String login) {
         return userRepository.existsByLogin(login);
@@ -136,4 +141,18 @@ public class UserService {
             return "User " + id + " unlock";
         }
     }
+
+
+    public void saveConfirmationToken(User appUser, String token) {
+        ConfirmationToken confirmationToken = new ConfirmationToken(token, LocalDateTime.now(),
+                LocalDateTime.now().plusMinutes(15), appUser);
+        confirmationTokenService.saveConfirmationToken(confirmationToken);
+    }
+
+    public int enableAppUser(String email) {
+        return userRepository.enableAppUser(email);
+
+    }
+
+
 }
