@@ -1,6 +1,6 @@
 package com.example.javadoc0032022.repository;
 
-import com.example.javadoc0032022.models.RefreshToken;
+import com.example.javadoc0032022.models.token.RefreshToken;
 import com.example.javadoc0032022.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

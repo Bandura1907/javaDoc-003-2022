@@ -1,5 +1,6 @@
-package com.example.javadoc0032022.models;
+package com.example.javadoc0032022.models.token;
 
+import com.example.javadoc0032022.models.User;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

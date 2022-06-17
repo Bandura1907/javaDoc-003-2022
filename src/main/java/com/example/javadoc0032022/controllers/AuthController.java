@@ -1,10 +1,12 @@
 package com.example.javadoc0032022.controllers;
 
+import com.example.javadoc0032022.email.EmailSender;
 import com.example.javadoc0032022.exception.TokenRefreshException;
 import com.example.javadoc0032022.models.ERole;
-import com.example.javadoc0032022.models.RefreshToken;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
+import com.example.javadoc0032022.models.token.ConfirmationToken;
+import com.example.javadoc0032022.models.token.RefreshToken;
 import com.example.javadoc0032022.payload.request.LoginRequest;
 import com.example.javadoc0032022.payload.request.RegisterRequest;
 import com.example.javadoc0032022.payload.request.TokenRefreshRequest;
@@ -15,6 +17,7 @@ import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.security.jwt.JwtUtils;
 import com.example.javadoc0032022.security.service.RefreshTokenService;
 import com.example.javadoc0032022.security.service.UserDetailsImpl;
+import com.example.javadoc0032022.services.ConfirmationTokenService;
 import com.example.javadoc0032022.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,12 +34,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,6 +56,8 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
     private RoleRepository roleRepository;
     private RefreshTokenService refreshTokenService;
+    private ConfirmationTokenService confirmationTokenService;
+    private EmailSender emailSender;
 
 
     @Operation(summary = "Метод для авторизации пользователя", description = "После 3 попыток неудачной авторизации блокирует юзера на 1 минуту," +
@@ -136,6 +139,7 @@ public class AuthController {
         user.setNonBlocked(true);
         user.setTimeLocked(false);
 
+
         Set<Role> roleSet = new HashSet<>();
         Set<String> strRoles = registerRequest.getRole();
 
@@ -149,7 +153,51 @@ public class AuthController {
 
         user.setRoles(roleSet);
         userService.save(user);
-        return authenticateUser(registerRequest.getLogin(), registerRequest.getPassword());
+
+        String token = UUID.randomUUID().toString();
+        ConfirmationToken confirmationToken = new ConfirmationToken(
+                token,
+                LocalDateTime.now(),
+                LocalDateTime.now().plusMinutes(15),
+                user
+        );
+
+        confirmationTokenService.saveConfirmationToken(confirmationToken);
+
+        String link = "http://localhost:3001/api/auth/confirm?token=" + token;
+        emailSender.send(registerRequest.getEmail(), userService.buildEmail(
+                registerRequest.getName() + " " + registerRequest.getLastName(),
+                link
+        ));
+
+//        return authenticateUser(registerRequest.getLogin(), registerRequest.getPassword());
+        return ResponseEntity.ok(new MessageResponse("You must be active email"));
+    }
+
+
+    @Operation(summary = "Метод обновления токена")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Токен обновлен",
+                    content = @Content(schema = @Schema(implementation = TokenRefreshResponse.class)))
+    })
+    @PostMapping("/refresh_token")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtUtils.generateTokenFromUsername(user.getLogin());
+                    return ResponseEntity.ok(new TokenRefreshResponse(token, requestRefreshToken));
+                })
+                .orElseThrow(() -> new TokenRefreshException(requestRefreshToken,
+                        "Refresh token is not in database!"));
+    }
+
+    @GetMapping("/confirm")
+    public ResponseEntity<MessageResponse> confirm(@RequestParam("token") String token) {
+        return ResponseEntity.ok(new MessageResponse(userService.confirmToken(token)));
     }
 
     private ResponseEntity<JwtResponse> authenticateUser(String login, String password) {
@@ -179,32 +227,6 @@ public class AuthController {
                 userDetails.isNonBlocked())
         );
     }
-
-    @Operation(summary = "Метод обновления токена")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Токен обновлен",
-            content = @Content(schema = @Schema(implementation = TokenRefreshResponse.class)))
-    })
-    @PostMapping("/refresh_token")
-    public ResponseEntity<?> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
-        String requestRefreshToken = request.getRefreshToken();
-
-        return refreshTokenService.findByToken(requestRefreshToken)
-                .map(refreshTokenService::verifyExpiration)
-                .map(RefreshToken::getUser)
-                .map(user -> {
-                    String token = jwtUtils.generateTokenFromUsername(user.getLogin());
-                    return ResponseEntity.ok(new TokenRefreshResponse(token, requestRefreshToken));
-                })
-                .orElseThrow(() -> new TokenRefreshException(requestRefreshToken,
-                        "Refresh token is not in database!"));
-    }
-
-//    @PostMapping("/logout")
-//    public ResponseEntity<?> logoutUser(@Valid @RequestBody LogOutRequest logOutRequest) {
-//        refreshTokenService.deleteByUserId(logOutRequest.getUserId());
-//        return ResponseEntity.ok(new MessageResponse("Log out successful!"));
-//    }
 
 }
 
