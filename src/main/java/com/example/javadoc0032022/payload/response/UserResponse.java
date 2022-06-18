@@ -33,7 +33,12 @@ public class UserResponse {
 
     private boolean isTimeLocked;
     private boolean isPasswordExpired;
+
     private boolean isNonBlocked;
     private int loginAttempts;
     private long blockTime;
+    private boolean enabled;
+    private boolean firstLogin;
+
+
 }

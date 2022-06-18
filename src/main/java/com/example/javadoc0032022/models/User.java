@@ -44,4 +44,6 @@ public class User {
     private long blockTime;
     private boolean isNonBlocked;
     private boolean enabled;
+    private boolean firstLogin;
+    
 }

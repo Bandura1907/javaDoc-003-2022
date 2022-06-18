@@ -4,32 +4,44 @@ import com.example.javadoc0032022.models.ERole;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.models.token.ConfirmationToken;
+import com.example.javadoc0032022.models.token.ResetToken;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
 import com.example.javadoc0032022.payload.response.UserResponse;
+import com.example.javadoc0032022.repository.ResetTokenRepository;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
 public class UserService {
 
+    private static final long EXPIRE_TOKEN_AFTER_MINUTES = 30;
+//    private static final String BASE_URL = ServletUriComponentsBuilder.fromCurrentContextPath().build().toString();
+
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private RoleRepository roleRepository;
     private ConfirmationTokenService confirmationTokenService;
+    private ResetTokenRepository resetTokenRepository;
+    private TemplateEngine templateEngine;
 
     public boolean existsByLogin(String login) {
         return userRepository.existsByLogin(login);
+    }
+
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
     }
 
     public void save(User user) {
@@ -40,7 +52,11 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public UserResponse findById(int id) {
+    public Optional<User> findById(int id) {
+        return userRepository.findById(id);
+    }
+
+    public UserResponse findByIdUserResponse(int id) {
         Optional<User> user = userRepository.findById(id);
         Set<String> roles = new HashSet<>();
         if (user.isPresent()) {
@@ -60,7 +76,8 @@ public class UserService {
             return new UserResponse(user.get().getId(), user.get().getLogin(), user.get().getPassword(), roles, user.get().getName(),
                     user.get().getLastName(), user.get().getSurName(), user.get().getEmail(), user.get().getPhoneNumber(),
                     user.get().getCountDocuments(), user.get().isExistEcp(), user.get().isTimeLocked(), user.get().isPasswordExpired(),
-                    user.get().isNonBlocked(), user.get().getLoginAttempts(), user.get().getBlockTime());
+                    user.get().isNonBlocked(), user.get().getLoginAttempts(), user.get().getBlockTime(),
+                    user.get().isEnabled(), user.get().isFirstLogin());
         } else return new UserResponse();
 
     }
@@ -162,76 +179,73 @@ public class UserService {
         return "confirmed";
     }
 
+    public String forgotPassword(String email) {
+        Optional<User> userOptional = Optional.ofNullable(userRepository.findByEmail(email));
+
+        if (userOptional.isEmpty()) {
+            return "Invalid email id.";
+        }
+
+        ResetToken resetToken = new ResetToken();
+        resetToken.setUser(userOptional.get());
+        resetToken.setToken(generateToken());
+        resetToken.setTokenCreationDate(LocalDateTime.now());
+
+        return resetTokenRepository.save(resetToken).getToken();
+    }
+
+    public String resetPassword(String token, String password) {
+        Optional<ResetToken> resetTokenOptional = Optional
+                .ofNullable(resetTokenRepository.findByToken(token));
+
+        if (resetTokenOptional.isEmpty()) {
+            return "Invalid token.";
+        }
+
+        LocalDateTime tokenCreationDate = resetTokenOptional.get().getTokenCreationDate();
+
+        if (isTokenExpired(tokenCreationDate)) {
+            return "Token expired.";
+        }
+
+        resetTokenOptional.get().getUser().setPassword(passwordEncoder.encode(password));
+        resetTokenOptional.get().setToken(null);
+        resetTokenOptional.get().setTokenCreationDate(null);
+
+        resetTokenRepository.save(resetTokenOptional.get());
+
+        return "Your password successfully updated.";
+    }
+
+    private String generateToken() {
+        String token = UUID.randomUUID().toString() +
+                UUID.randomUUID().toString();
+
+        return token;
+    }
+
+    private boolean isTokenExpired(final LocalDateTime tokenCreationDate) {
+
+        LocalDateTime now = LocalDateTime.now();
+        Duration diff = Duration.between(tokenCreationDate, now);
+
+        return diff.toMinutes() >= EXPIRE_TOKEN_AFTER_MINUTES;
+    }
+
     private int enableAppUser(String email) {
         return userRepository.enableAppUser(email);
     }
 
-    public String buildEmail(String name, String link) {
-        return "<div style=\"font-family:Helvetica,Arial,sans-serif;font-size:16px;margin:0;color:#0b0c0c\">\n" +
-                "\n" +
-                "<span style=\"display:none;font-size:1px;color:#fff;max-height:0\"></span>\n" +
-                "\n" +
-                "  <table role=\"presentation\" width=\"100%\" style=\"border-collapse:collapse;min-width:100%;width:100%!important\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n" +
-                "    <tbody><tr>\n" +
-                "      <td width=\"100%\" height=\"53\" bgcolor=\"#0b0c0c\">\n" +
-                "        \n" +
-                "        <table role=\"presentation\" width=\"100%\" style=\"border-collapse:collapse;max-width:580px\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" align=\"center\">\n" +
-                "          <tbody><tr>\n" +
-                "            <td width=\"70\" bgcolor=\"#0b0c0c\" valign=\"middle\">\n" +
-                "                <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse\">\n" +
-                "                  <tbody><tr>\n" +
-                "                    <td style=\"padding-left:10px\">\n" +
-                "                  \n" +
-                "                    </td>\n" +
-                "                    <td style=\"font-size:28px;line-height:1.315789474;Margin-top:4px;padding-left:10px\">\n" +
-                "                      <span style=\"font-family:Helvetica,Arial,sans-serif;font-weight:700;color:#ffffff;text-decoration:none;vertical-align:top;display:inline-block\">Confirm your email</span>\n" +
-                "                    </td>\n" +
-                "                  </tr>\n" +
-                "                </tbody></table>\n" +
-                "              </a>\n" +
-                "            </td>\n" +
-                "          </tr>\n" +
-                "        </tbody></table>\n" +
-                "        \n" +
-                "      </td>\n" +
-                "    </tr>\n" +
-                "  </tbody></table>\n" +
-                "  <table role=\"presentation\" class=\"m_-6186904992287805515content\" align=\"center\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;max-width:580px;width:100%!important\" width=\"100%\">\n" +
-                "    <tbody><tr>\n" +
-                "      <td width=\"10\" height=\"10\" valign=\"middle\"></td>\n" +
-                "      <td>\n" +
-                "        \n" +
-                "                <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse\">\n" +
-                "                  <tbody><tr>\n" +
-                "                    <td bgcolor=\"#1D70B8\" width=\"100%\" height=\"10\"></td>\n" +
-                "                  </tr>\n" +
-                "                </tbody></table>\n" +
-                "        \n" +
-                "      </td>\n" +
-                "      <td width=\"10\" valign=\"middle\" height=\"10\"></td>\n" +
-                "    </tr>\n" +
-                "  </tbody></table>\n" +
-                "\n" +
-                "\n" +
-                "\n" +
-                "  <table role=\"presentation\" class=\"m_-6186904992287805515content\" align=\"center\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;max-width:580px;width:100%!important\" width=\"100%\">\n" +
-                "    <tbody><tr>\n" +
-                "      <td height=\"30\"><br></td>\n" +
-                "    </tr>\n" +
-                "    <tr>\n" +
-                "      <td width=\"10\" valign=\"middle\"><br></td>\n" +
-                "      <td style=\"font-family:Helvetica,Arial,sans-serif;font-size:19px;line-height:1.315789474;max-width:560px\">\n" +
-                "        \n" +
-                "            <p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\">Hi " + name + ",</p><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> Thank you for registering. Please click on the below link to activate your account: </p><blockquote style=\"Margin:0 0 20px 0;border-left:10px solid #b1b4b6;padding:15px 0 0.1px 15px;font-size:19px;line-height:25px\"><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> <a href=\"" + link + "\">Activate Now</a> </p></blockquote>\n Link will expire in 15 minutes. <p>See you soon</p>" +
-                "        \n" +
-                "      </td>\n" +
-                "      <td width=\"10\" valign=\"middle\"><br></td>\n" +
-                "    </tr>\n" +
-                "    <tr>\n" +
-                "      <td height=\"30\"><br></td>\n" +
-                "    </tr>\n" +
-                "  </tbody></table><div class=\"yj6qo\"></div><div class=\"adL\">\n" +
-                "\n" +
-                "</div></div>";
+    public String buildActivationEmail(String name, String link) {
+        Context context = new Context();
+        context.setVariable("link", link);
+        context.setVariable("name", name);
+        return templateEngine.process("activation-email", context);
+    }
+
+    public String buildResetPasswordEmail(String token) {
+        Context context = new Context();
+        context.setVariable("token", token);
+        return templateEngine.process("reset-password-email", context);
     }
 }

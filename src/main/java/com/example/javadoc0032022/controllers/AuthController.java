@@ -123,6 +123,10 @@ public class AuthController {
                     .body(new MessageResponse("User " + registerRequest.getLogin() + " already register"));
         }
 
+        if (userService.existsByEmail(registerRequest.getEmail()))
+            return ResponseEntity.badRequest().body(new MessageResponse("User email " +
+                    registerRequest.getEmail() + " already exist"));
+
         if (registerRequest.getLogin().equals(registerRequest.getPassword())) {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse("username must not match password"));
@@ -138,6 +142,7 @@ public class AuthController {
         user.setPhoneNumber(registerRequest.getPhoneNumber());
         user.setNonBlocked(true);
         user.setTimeLocked(false);
+        user.setFirstLogin(true);
 
 
         Set<Role> roleSet = new HashSet<>();
@@ -165,13 +170,14 @@ public class AuthController {
         confirmationTokenService.saveConfirmationToken(confirmationToken);
 
         String link = "http://localhost:3001/api/auth/confirm?token=" + token;
-        emailSender.send(registerRequest.getEmail(), userService.buildEmail(
+        emailSender.send(registerRequest.getEmail(), userService.buildActivationEmail(
                 registerRequest.getName() + " " + registerRequest.getLastName(),
                 link
         ));
 
 //        return authenticateUser(registerRequest.getLogin(), registerRequest.getPassword());
-        return ResponseEntity.ok(new MessageResponse("You must be active email"));
+//        return ResponseEntity.ok(new MessageResponse("You must be active email"));
+        return ResponseEntity.ok(Map.of("id", user.getId(), "message", "You must be active email"));
     }
 
 

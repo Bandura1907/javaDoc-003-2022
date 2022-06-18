@@ -1,8 +1,10 @@
 package com.example.javadoc0032022.controllers;
 
+import com.example.javadoc0032022.email.EmailSender;
 import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.payload.request.ChangePasswordRequest;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
+import com.example.javadoc0032022.payload.request.ResetPasswordRequest;
 import com.example.javadoc0032022.payload.response.MessageResponse;
 import com.example.javadoc0032022.payload.response.UserResponse;
 import com.example.javadoc0032022.services.UserService;
@@ -17,10 +19,12 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/user")
@@ -29,6 +33,7 @@ import java.util.List;
 public class UserController {
 
     private UserService userService;
+    private EmailSender emailSender;
 
     @Operation(summary = "Метод получения всех юзеров")
     @ApiResponse(responseCode = "200", description = "Получены все юзеры")
@@ -41,7 +46,25 @@ public class UserController {
     @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UserResponse.class)))
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@Parameter(description = "ID user", required = true) @PathVariable int id) {
-        return ResponseEntity.ok(userService.findById(id));
+        return ResponseEntity.ok(userService.findByIdUserResponse(id));
+    }
+
+    @PostMapping("/forgot_password")
+    public ResponseEntity<MessageResponse> forgotPassword(@RequestParam String email) {
+        String response = userService.forgotPassword(email);
+
+        if (!response.startsWith("Invalid")) {
+            emailSender.send(email, userService.buildResetPasswordEmail(response));
+            return ResponseEntity.ok(new MessageResponse(response));
+        } else return new ResponseEntity<>(new MessageResponse(response), HttpStatus.NOT_FOUND);
+
+    }
+
+    @PutMapping("/reset_password")
+    public String resetPassword(@RequestParam String token,
+                                @RequestParam String password) {
+
+        return userService.resetPassword(token, password);
     }
 
     @Operation(summary = "Метод блокировки юзера (Доступен только админу)", description = "Блокирование пользователя по ID. " +
@@ -97,4 +120,14 @@ public class UserController {
         }
 
     }
+
+//    @PutMapping("reset_password/{id}")
+//    public ResponseEntity<MessageResponse> restPasswordUser(@PathVariable int id, @RequestBody ResetPasswordRequest resetPasswordRequest) {
+//        Optional<User> user = userService.findById(id);
+//        if (user.isEmpty())
+//            return new ResponseEntity<>(new MessageResponse("user not found"), HttpStatus.NOT_FOUND);
+//        user.get().setPassword(encoder.encode(resetPasswordRequest.getNewPassword()));
+//        userService.save(user.get());
+//        return ResponseEntity.ok(new MessageResponse("Password changed"));
+//    }
 }
