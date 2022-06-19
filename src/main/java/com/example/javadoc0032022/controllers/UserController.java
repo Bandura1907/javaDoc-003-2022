@@ -34,6 +34,7 @@ public class UserController {
 
     private UserService userService;
     private EmailSender emailSender;
+    private PasswordEncoder encoder;
 
     @Operation(summary = "Метод получения всех юзеров")
     @ApiResponse(responseCode = "200", description = "Получены все юзеры")
@@ -49,8 +50,13 @@ public class UserController {
         return ResponseEntity.ok(userService.findByIdUserResponse(id));
     }
 
+    @Operation(summary = "Метод для востановления пароля")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Return Token"),
+            @ApiResponse(responseCode = "404", description = "Email not found")
+    })
     @PostMapping("/forgot_password")
-    public ResponseEntity<MessageResponse> forgotPassword(@RequestParam String email) {
+    public ResponseEntity<MessageResponse> forgotPassword(@Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)@RequestParam String email) {
         String response = userService.forgotPassword(email);
 
         if (!response.startsWith("Invalid")) {
@@ -60,11 +66,12 @@ public class UserController {
 
     }
 
+    @Operation(summary = "Метод для сброса пароля")
     @PutMapping("/reset_password")
-    public String resetPassword(@RequestParam String token,
-                                @RequestParam String password) {
+    public ResponseEntity<MessageResponse> resetPassword(@Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)@RequestParam String token,
+                                                         @Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)@RequestParam String password) {
 
-        return userService.resetPassword(token, password);
+        return ResponseEntity.ok(new MessageResponse(userService.resetPassword(token, password)));
     }
 
     @Operation(summary = "Метод блокировки юзера (Доступен только админу)", description = "Блокирование пользователя по ID. " +
@@ -121,13 +128,21 @@ public class UserController {
 
     }
 
-//    @PutMapping("reset_password/{id}")
-//    public ResponseEntity<MessageResponse> restPasswordUser(@PathVariable int id, @RequestBody ResetPasswordRequest resetPasswordRequest) {
-//        Optional<User> user = userService.findById(id);
-//        if (user.isEmpty())
-//            return new ResponseEntity<>(new MessageResponse("user not found"), HttpStatus.NOT_FOUND);
-//        user.get().setPassword(encoder.encode(resetPasswordRequest.getNewPassword()));
-//        userService.save(user.get());
-//        return ResponseEntity.ok(new MessageResponse("Password changed"));
-//    }
+    @Operation(summary = "Метод для смены пароля при первом входе (Пока оставлю может пригодится) (Можно поменять в change_info (поле FirstLogin))")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password changed"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @PutMapping("/first_login_password_change/{id}")
+    public ResponseEntity<MessageResponse> firstLoginPasswordChange(@Parameter(required = true, description = "User ID") @PathVariable int id,
+                                                                    @Parameter(description = "ResetPasswordRequest", required = true) @RequestBody ResetPasswordRequest request) {
+        Optional<User> user = userService.findById(id);
+        if (user.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
+
+        user.get().setPassword(encoder.encode(request.getNewPassword()));
+        user.get().setFirstLogin(false);
+        userService.save(user.get());
+        return ResponseEntity.ok(new MessageResponse("Password changed"));
+    }
 }

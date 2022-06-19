@@ -137,6 +137,7 @@ public class UserService {
         user.setPhoneNumber(infoUserRequest.getPhoneNumber() == null ? user.getPhoneNumber() : infoUserRequest.getPhoneNumber());
         user.setRoles(infoUserRequest.getRoles() == null ? user.getRoles() : roleSet);
         user.setCountDocuments(infoUserRequest.getCountDocuments() == null ? user.getCountDocuments() : infoUserRequest.getCountDocuments());
+        user.setFirstLogin(infoUserRequest.isFirstLogin() || user.isFirstLogin());
 //        user.setExistEcp(infoUserRequest.isExistEcp() || user.isExistEcp());
 //        user.setPasswordExpired(infoUserRequest.isPasswordExpired() || user.isPasswordExpired());
 

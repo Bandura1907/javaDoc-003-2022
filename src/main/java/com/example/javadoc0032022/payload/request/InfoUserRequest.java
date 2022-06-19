@@ -33,4 +33,6 @@ public class InfoUserRequest {
 
     private Integer countDocuments;
 
+    private boolean firstLogin;
+
 }

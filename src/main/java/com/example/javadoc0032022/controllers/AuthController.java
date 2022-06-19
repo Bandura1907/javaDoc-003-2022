@@ -20,6 +20,7 @@ import com.example.javadoc0032022.security.service.UserDetailsImpl;
 import com.example.javadoc0032022.services.ConfirmationTokenService;
 import com.example.javadoc0032022.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -201,6 +202,9 @@ public class AuthController {
                         "Refresh token is not in database!"));
     }
 
+    @Operation(summary = "Метод для потдверждения почти при регестрации")
+    @ApiResponse(responseCode = "200", description = "Почта подтверждена",
+            content = @Content(schema = @Schema(implementation = MessageResponse.class)))
     @GetMapping("/confirm")
     public ResponseEntity<MessageResponse> confirm(@RequestParam("token") String token) {
         return ResponseEntity.ok(new MessageResponse(userService.confirmToken(token)));
@@ -230,7 +234,8 @@ public class AuthController {
                 userDetails.getSurName(),
                 userDetails.getEmail(),
                 userDetails.getPhoneNumber(),
-                userDetails.isNonBlocked())
+                userDetails.isNonBlocked(),
+                userDetails.isFirstLogin())
         );
     }
 
