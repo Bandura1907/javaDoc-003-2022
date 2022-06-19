@@ -159,24 +159,25 @@ public class UserService {
     }
 
     public String confirmToken(String token) {
-        ConfirmationToken confirmationToken = confirmationTokenService
-                .getToken(token)
-                .orElseThrow(() ->
-                        new IllegalStateException("token not found"));
+        Optional<ConfirmationToken> confirmationToken = confirmationTokenService
+                .getToken(token);
 
-        if (confirmationToken.getConfirmedAt() != null) {
-            throw new IllegalStateException("email already confirmed");
+        if (confirmationToken.isEmpty())
+            return "Invalid token";
+
+        if (confirmationToken.get().getConfirmedAt() != null) {
+            return "email already confirmed";
         }
 
-        LocalDateTime expiredAt = confirmationToken.getExpiresAt();
+        LocalDateTime expiredAt = confirmationToken.get().getExpiresAt();
 
         if (expiredAt.isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("token expired");
+            return  "token expired";
         }
 
         confirmationTokenService.setConfirmedAt(token);
         enableAppUser(
-                confirmationToken.getUser().getEmail());
+                confirmationToken.get().getUser().getEmail());
         return "confirmed";
     }
 
@@ -244,9 +245,10 @@ public class UserService {
         return templateEngine.process("activation-email", context);
     }
 
-    public String buildResetPasswordEmail(String token) {
+    public String buildResetPasswordEmail(String token, String link) {
         Context context = new Context();
         context.setVariable("token", token);
+        context.setVariable("link", link);
         return templateEngine.process("reset-password-email", context);
     }
 }

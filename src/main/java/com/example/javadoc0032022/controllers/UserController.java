@@ -60,7 +60,7 @@ public class UserController {
         String response = userService.forgotPassword(email);
 
         if (!response.startsWith("Invalid")) {
-            emailSender.send(email, userService.buildResetPasswordEmail(response));
+            emailSender.send(email, userService.buildResetPasswordEmail(response, "http://194.58.96.68:39193/password/" + response));
             return ResponseEntity.ok(new MessageResponse(response));
         } else return new ResponseEntity<>(new MessageResponse(response), HttpStatus.NOT_FOUND);
 

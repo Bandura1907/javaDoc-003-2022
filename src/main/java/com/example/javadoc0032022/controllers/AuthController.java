@@ -170,7 +170,7 @@ public class AuthController {
 
         confirmationTokenService.saveConfirmationToken(confirmationToken);
 
-        String link = "http://localhost:3001/api/auth/confirm?token=" + token;
+        String link = "http://194.58.96.68:39193/email/" + token;
         emailSender.send(registerRequest.getEmail(), userService.buildActivationEmail(
                 registerRequest.getName() + " " + registerRequest.getLastName(),
                 link
