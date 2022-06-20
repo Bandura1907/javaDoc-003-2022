@@ -1,7 +1,7 @@
 package com.example.javadoc0032022.security.service;
 
 import com.example.javadoc0032022.exception.TokenRefreshException;
-import com.example.javadoc0032022.models.RefreshToken;
+import com.example.javadoc0032022.models.token.RefreshToken;
 import com.example.javadoc0032022.repository.RefreshTokenRepository;
 import com.example.javadoc0032022.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;

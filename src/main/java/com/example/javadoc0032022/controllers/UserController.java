@@ -1,8 +1,10 @@
 package com.example.javadoc0032022.controllers;
 
+import com.example.javadoc0032022.email.EmailSender;
 import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.payload.request.ChangePasswordRequest;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
+import com.example.javadoc0032022.payload.request.ResetPasswordRequest;
 import com.example.javadoc0032022.payload.response.MessageResponse;
 import com.example.javadoc0032022.payload.response.UserResponse;
 import com.example.javadoc0032022.services.UserService;
@@ -17,10 +19,12 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/user")
@@ -29,6 +33,8 @@ import java.util.List;
 public class UserController {
 
     private UserService userService;
+    private EmailSender emailSender;
+    private PasswordEncoder encoder;
 
     @Operation(summary = "Метод получения всех юзеров")
     @ApiResponse(responseCode = "200", description = "Получены все юзеры")
@@ -41,7 +47,31 @@ public class UserController {
     @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UserResponse.class)))
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@Parameter(description = "ID user", required = true) @PathVariable int id) {
-        return ResponseEntity.ok(userService.findById(id));
+        return ResponseEntity.ok(userService.findByIdUserResponse(id));
+    }
+
+    @Operation(summary = "Метод для востановления пароля")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Return Token"),
+            @ApiResponse(responseCode = "404", description = "Email not found")
+    })
+    @PostMapping("/forgot_password")
+    public ResponseEntity<MessageResponse> forgotPassword(@Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)@RequestParam String email) {
+        String response = userService.forgotPassword(email);
+
+        if (!response.startsWith("Invalid")) {
+            emailSender.send(email, userService.buildResetPasswordEmail(response, "http://194.58.96.68:39193/password/" + response));
+            return ResponseEntity.ok(new MessageResponse(response));
+        } else return new ResponseEntity<>(new MessageResponse(response), HttpStatus.NOT_FOUND);
+
+    }
+
+    @Operation(summary = "Метод для сброса пароля")
+    @PutMapping("/reset_password")
+    public ResponseEntity<MessageResponse> resetPassword(@Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)@RequestParam String token,
+                                                         @Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)@RequestParam String password) {
+
+        return ResponseEntity.ok(new MessageResponse(userService.resetPassword(token, password)));
     }
 
     @Operation(summary = "Метод блокировки юзера (Доступен только админу)", description = "Блокирование пользователя по ID. " +
@@ -96,5 +126,23 @@ public class UserController {
             return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
 
+    }
+
+    @Operation(summary = "Метод для смены пароля при первом входе (Пока оставлю может пригодится) (Можно поменять в change_info (поле FirstLogin))")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password changed"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @PutMapping("/first_login_password_change/{id}")
+    public ResponseEntity<MessageResponse> firstLoginPasswordChange(@Parameter(required = true, description = "User ID") @PathVariable int id,
+                                                                    @Parameter(description = "ResetPasswordRequest", required = true) @RequestBody ResetPasswordRequest request) {
+        Optional<User> user = userService.findById(id);
+        if (user.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
+
+        user.get().setPassword(encoder.encode(request.getNewPassword()));
+        user.get().setFirstLogin(false);
+        userService.save(user.get());
+        return ResponseEntity.ok(new MessageResponse("Password changed"));
     }
 }

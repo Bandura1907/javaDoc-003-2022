@@ -32,6 +32,8 @@ public class UserDetailsImpl implements UserDetails {
     private boolean isNonBlocked;
     private int loginAttempts;
     private long blockTime;
+    private boolean enabled;
+    private boolean firstLogin;
 
     public static UserDetailsImpl build(User user) {
         List<GrantedAuthority> authorities = user.getRoles().stream()
@@ -40,7 +42,7 @@ public class UserDetailsImpl implements UserDetails {
         return new UserDetailsImpl(user.getId(), user.getLogin(), user.getPassword(), authorities, user.getName(),
                 user.getLastName(), user.getSurName(), user.getEmail(), user.getPhoneNumber(), user.getCountDocuments(),
                 user.isExistEcp(), user.isTimeLocked(), user.isPasswordExpired(), user.isNonBlocked(), user.getLoginAttempts(),
-                user.getBlockTime());
+                user.getBlockTime(), user.isEnabled(), user.isFirstLogin());
     }
 
     @Override
@@ -65,6 +67,6 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 }

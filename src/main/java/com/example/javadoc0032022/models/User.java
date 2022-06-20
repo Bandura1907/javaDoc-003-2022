@@ -40,7 +40,10 @@ public class User {
 
     private boolean isTimeLocked;
     private boolean isPasswordExpired;
-    private boolean isNonBlocked;
     private int loginAttempts;
     private long blockTime;
+    private boolean isNonBlocked;
+    private boolean enabled;
+    private boolean firstLogin;
+    
 }
