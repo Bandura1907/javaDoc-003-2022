@@ -86,6 +86,10 @@ public class UserService {
         return userRepository.findByLogin(login);
     }
 
+    public void deleteById(int id) {
+        userRepository.deleteById(id);
+    }
+
     public Set<Role> addRoles(Set<String> strRoles) {
         Set<Role> roleSet = new HashSet<>();
         if (strRoles != null) {

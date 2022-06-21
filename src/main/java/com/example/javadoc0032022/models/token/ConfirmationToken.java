@@ -4,6 +4,8 @@ import com.example.javadoc0032022.models.User;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -30,10 +32,10 @@ public class ConfirmationToken {
     private LocalDateTime confirmedAt;
 
     @ManyToOne
-    @JoinColumn(
-            nullable = false,
-            name = "user_id"
-    )
+//    @JoinColumn(
+//            nullable = false,
+//            name = "user_id"
+//    )
     private User user;
 
     public ConfirmationToken(String token,

@@ -27,6 +27,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -43,7 +45,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
-@AllArgsConstructor
 @RequestMapping("/api/auth")
 @Tag(name = "AuthController", description = "Контролер управления авторизацией")
 public class AuthController {
@@ -51,15 +52,32 @@ public class AuthController {
     static final long MIN10 = 600000;
     static final long HOUR1 = 3600000;
 
-    private AuthenticationManager authenticationManager;
-    private JwtUtils jwtUtils;
-    private UserService userService;
-    private PasswordEncoder passwordEncoder;
-    private RoleRepository roleRepository;
-    private RefreshTokenService refreshTokenService;
-    private ConfirmationTokenService confirmationTokenService;
-    private EmailSender emailSender;
+    @Value("${doc.app.confirmation.token.link}")
+    private String confirmationTokenLink;
 
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
+    private final UserService userService;
+    private final PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
+    private final RefreshTokenService refreshTokenService;
+    private final ConfirmationTokenService confirmationTokenService;
+    private final EmailSender emailSender;
+
+    @Autowired
+    public AuthController(AuthenticationManager authenticationManager, JwtUtils jwtUtils,
+                          UserService userService, PasswordEncoder passwordEncoder,
+                          RoleRepository roleRepository, RefreshTokenService refreshTokenService,
+                          ConfirmationTokenService confirmationTokenService, EmailSender emailSender) {
+        this.authenticationManager = authenticationManager;
+        this.jwtUtils = jwtUtils;
+        this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
+        this.roleRepository = roleRepository;
+        this.refreshTokenService = refreshTokenService;
+        this.confirmationTokenService = confirmationTokenService;
+        this.emailSender = emailSender;
+    }
 
     @Operation(summary = "Метод для авторизации пользователя", description = "После 3 попыток неудачной авторизации блокирует юзера на 1 минуту," +
             "4 попытки - 10 минут, 5 и больше - 1 час")
@@ -170,17 +188,16 @@ public class AuthController {
 
         confirmationTokenService.saveConfirmationToken(confirmationToken);
 
-        String link = "http://194.58.96.68:39193/email/" + token;
+//        String link = "http://194.58.96.68:39193/email/" + token;
         emailSender.send(registerRequest.getEmail(), userService.buildActivationEmail(
                 registerRequest.getName() + " " + registerRequest.getLastName(),
-                link
+                confirmationTokenLink + token
         ));
 
 //        return authenticateUser(registerRequest.getLogin(), registerRequest.getPassword());
 //        return ResponseEntity.ok(new MessageResponse("You must be active email"));
         return ResponseEntity.ok(Map.of("id", user.getId(), "message", "You must be active email"));
     }
-
 
     @Operation(summary = "Метод обновления токена")
     @ApiResponses(value = {

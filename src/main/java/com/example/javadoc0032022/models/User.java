@@ -1,5 +1,8 @@
 package com.example.javadoc0032022.models;
 
+import com.example.javadoc0032022.models.token.ConfirmationToken;
+import com.example.javadoc0032022.models.token.RefreshToken;
+import com.example.javadoc0032022.models.token.ResetToken;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -7,6 +10,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -45,5 +49,17 @@ public class User {
     private boolean isNonBlocked;
     private boolean enabled;
     private boolean firstLogin;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<ConfirmationToken> confirmationTokenList;
+
+    @JsonIgnore
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "user")
+    private RefreshToken refreshToken;
+
+    @JsonIgnore
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "user")
+    private ResetToken resetToken;
     
 }
