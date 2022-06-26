@@ -1,5 +1,6 @@
 package com.example.javadoc0032022.models;
 
+import com.example.javadoc0032022.models.enums.ERole;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

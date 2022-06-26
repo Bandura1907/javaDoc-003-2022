@@ -29,7 +29,8 @@ public class User {
     private String password;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
     private String name;
@@ -61,5 +62,9 @@ public class User {
     @JsonIgnore
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "user")
     private ResetToken resetToken;
-    
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Document> documentList;
+
 }

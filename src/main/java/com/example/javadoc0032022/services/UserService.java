@@ -1,6 +1,6 @@
 package com.example.javadoc0032022.services;
 
-import com.example.javadoc0032022.models.ERole;
+import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.models.token.ConfirmationToken;
@@ -14,7 +14,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
