@@ -6,6 +6,7 @@ import com.example.javadoc0032022.repository.DocumentRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -16,6 +17,10 @@ public class DocumentService {
 
     public Optional<Document> findById(int id) {
         return documentRepository.findById(id);
+    }
+
+    public List<Document> findAll() {
+        return documentRepository.findAll();
     }
 
     public void deleteById(int id) {

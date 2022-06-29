@@ -56,15 +56,19 @@ public class User {
     private List<ConfirmationToken> confirmationTokenList;
 
     @JsonIgnore
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "user")
-    private RefreshToken refreshToken;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+    private List<RefreshToken> refreshToken;
 
     @JsonIgnore
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "user")
     private ResetToken resetToken;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Document> documentList;
+    @OneToMany(mappedBy = "senderUser", cascade = CascadeType.ALL)
+    private List<Document> documentSenderList;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "receiverUser", cascade = CascadeType.ALL)
+    private List<Document> documentReceiverUser;
 
 }

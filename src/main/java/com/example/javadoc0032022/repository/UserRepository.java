@@ -1,15 +1,22 @@
 package com.example.javadoc0032022.repository;
 
+import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
+import com.example.javadoc0032022.models.enums.ERole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
+@Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findByLogin(String login);
+
     Boolean existsByLogin(String login);
     Boolean existsByEmail(String email);
 

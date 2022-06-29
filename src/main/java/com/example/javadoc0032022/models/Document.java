@@ -27,11 +27,15 @@ public class Document {
     @Enumerated(EnumType.STRING)
     private DocumentStatus status;
 
-    @JsonIgnore
+//    @JsonIgnore
     @Lob
     private byte[] file;
 
     @JsonIgnore
     @ManyToOne
-    private User user;
+    private User senderUser;
+
+    @JsonIgnore
+    @ManyToOne
+    private User receiverUser;
 }

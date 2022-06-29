@@ -2,6 +2,7 @@ package com.example.javadoc0032022.controllers;
 
 import com.example.javadoc0032022.email.EmailSender;
 import com.example.javadoc0032022.models.User;
+import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.models.token.ConfirmationToken;
 import com.example.javadoc0032022.payload.request.ChangePasswordRequest;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
@@ -17,7 +18,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;

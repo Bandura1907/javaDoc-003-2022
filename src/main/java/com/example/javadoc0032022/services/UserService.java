@@ -51,6 +51,7 @@ public class UserService {
         return userRepository.findAll();
     }
 
+
     public Optional<User> findById(int id) {
         return userRepository.findById(id);
     }
@@ -223,10 +224,7 @@ public class UserService {
     }
 
     private String generateToken() {
-        String token = UUID.randomUUID().toString() +
-                UUID.randomUUID().toString();
-
-        return token;
+        return UUID.randomUUID() + UUID.randomUUID().toString();
     }
 
     private boolean isTokenExpired(final LocalDateTime tokenCreationDate) {
