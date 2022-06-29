@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -17,6 +18,11 @@ public class DocumentService {
 
     public Optional<Document> findById(int id) {
         return documentRepository.findById(id);
+    }
+
+    public Map<String, Object> getFileById(int id) {
+        Document document = documentRepository.findById(id).get();
+        return Map.of("id", document.getId(), "file", document.getFile());
     }
 
     public List<Document> findAll() {

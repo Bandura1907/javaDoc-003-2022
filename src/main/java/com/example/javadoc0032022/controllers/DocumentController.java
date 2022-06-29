@@ -6,6 +6,12 @@ import com.example.javadoc0032022.models.enums.DocumentStatus;
 import com.example.javadoc0032022.payload.response.MessageResponse;
 import com.example.javadoc0032022.services.DocumentService;
 import com.example.javadoc0032022.services.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.AllArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -33,6 +39,9 @@ public class DocumentController {
     private DocumentService documentService;
     private UserService userService;
 
+    @Operation(summary = "метод создания документа")
+    @ApiResponse(responseCode = "200", description = "Загрузка файла",
+            content = @Content(schema = @Schema(implementation = InputStreamResource.class)))
     @GetMapping("/create")
     public ResponseEntity<InputStreamResource> createDoc() throws FileNotFoundException {
         File file = new File(NEW_DOC_FILE);
@@ -41,13 +50,32 @@ public class DocumentController {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(file.length()).body(resource);
     }
 
+    @GetMapping("/download/{documentId}")
+    public ResponseEntity<?> downloadDoc(@PathVariable int documentId) {
+        Optional<Document> document = documentService.findById(documentId);
+        if (document.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
+
+        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" +
+                document.get().getDocName()).contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentLength(document.get().getFile().length).body(document.get().getFile());
+    }
+
+    @Operation(summary = "Получение всех документов", description = "Документ передается в байтах")
+    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = Document.class)))
     @GetMapping
     public ResponseEntity<List<Document>> findAllDocuments() {
         return ResponseEntity.ok(documentService.findAll());
     }
 
+    @Operation(summary = "Проверка подписи документа")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "{signature: false} или {signature: true}"),
+            @ApiResponse(responseCode = "404", description = "Документ не найден",
+                    content = @Content(schema = @Schema(implementation = MessageResponse.class)))
+    })
     @GetMapping("/check_signature/{idDocument}")
-    public ResponseEntity<?> checkSignature(@PathVariable int idDocument) {
+    public ResponseEntity<?> checkSignature(@Parameter(required = true, description = "id document") @PathVariable int idDocument) {
         Optional<Document> document = documentService.findById(idDocument);
         if (document.isEmpty())
             return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
@@ -57,10 +85,21 @@ public class DocumentController {
         else return ResponseEntity.ok(Map.of("signature", false));
     }
 
+    @Operation(summary = "Загрузка файла", description = "Можно загрузить несколько файлов. Файли загружаются юзеру в аккаунт")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Файлы загружены",
+                    content = @Content(schema = @Schema(implementation = MessageResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Юзер не найден"),
+            @ApiResponse(responseCode = "400")
+    })
     @PostMapping("/upload")
-    public ResponseEntity<MessageResponse> uploadToDb(@RequestParam("file") MultipartFile[] file,
-                                                      @RequestParam(value = "isDraft", required = false, defaultValue = "false")
-                                                      boolean draft) {
+    public ResponseEntity<MessageResponse> uploadToDb(
+            @Parameter(required = true, description = "Передавать в Form Data. Параметр принимает файлы")
+            @RequestParam("file")
+            MultipartFile[] file,
+            @Parameter(description = "isDraft это черновик или нет. Необъязательно. Тоже передавать в form data")
+            @RequestParam(value = "isDraft", required = false, defaultValue = "false")
+            boolean draft) {
         Optional<User> user = userService.findByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
         if (user.isEmpty())
             return new ResponseEntity<>(new MessageResponse("user not found"),

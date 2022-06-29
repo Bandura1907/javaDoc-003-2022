@@ -2,7 +2,6 @@ package com.example.javadoc0032022.controllers;
 
 import com.example.javadoc0032022.email.EmailSender;
 import com.example.javadoc0032022.models.User;
-import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.models.token.ConfirmationToken;
 import com.example.javadoc0032022.payload.request.ChangePasswordRequest;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
@@ -72,7 +71,7 @@ public class UserController {
         Optional<User> user = userService.findById(userId);
 
         if (user.isEmpty())
-            return new ResponseEntity<>(new MessageResponse(""), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new MessageResponse("user not found"), HttpStatus.NOT_FOUND);
 
         ConfirmationToken confirmationToken = new ConfirmationToken(token,
                 LocalDateTime.now(),
