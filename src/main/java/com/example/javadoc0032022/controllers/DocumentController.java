@@ -40,7 +40,7 @@ import java.util.zip.ZipOutputStream;
 public class DocumentController {
 
     //    private static final String NEW_DOC_FILE = "src/main/resources/static/documents/docECP.docx";
-    private static final String NEW_DOC_FILE = "/dev/home/documents/docECP.docx";
+    private static final String NEW_DOC_FILE = "/home/dev/documents/docECP.docx";
     private DocumentService documentService;
     private UserService userService;
     private RoleRepository roleRepository;
