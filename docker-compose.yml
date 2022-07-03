@@ -1,40 +1,12 @@
 version: "3"
 
-#services:
-#  mysqldb:
-#    image: mysql:5.7
-#    restart: unless-stopped
-#    environment:
-#      - MYSQL_ROOT_PASSWORD=root
-#      - MYSQL_DATABASE=003-2022
-#    ports:
-#      - "6033:3306"
-#    volumes:
-#      - ./db:/var/lib/mysql
-#
-#
-#  app:
-#    depends_on:
-#      - mysqldb
-#    build: ./
-#    restart: on-failure
-#    links:
-#      - mysqldb
-#    ports:
-#      - "8888:8888"
-#    stdin_open: true
-#    tty: true
-#
-#volumes:
-#  db:
-
 services:
   server:
-    #    depends_on:
-    #      - mysqldb
     build: ./
     restart: on-failure
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "docker.for.mac.host.internal:host-gateway"
     ports:
-      - "8888:8888"
+      - "3001:3001"
+#    volumes:
+#      - "/home/dev/documents:/documents"

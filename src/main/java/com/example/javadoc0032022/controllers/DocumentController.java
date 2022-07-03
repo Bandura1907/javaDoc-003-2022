@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -36,14 +37,20 @@ import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/api/doc")
-@AllArgsConstructor
 public class DocumentController {
 
     //    private static final String NEW_DOC_FILE = "src/main/resources/static/documents/docECP.docx";
-    private static final String NEW_DOC_FILE = "/home/dev/documents/docECP.docx";
+    @Value("${documents.files}")
+    private String docPath;
     private DocumentService documentService;
     private UserService userService;
     private RoleRepository roleRepository;
+
+    public DocumentController(DocumentService documentService, UserService userService, RoleRepository roleRepository) {
+        this.documentService = documentService;
+        this.userService = userService;
+        this.roleRepository = roleRepository;
+    }
 
     @Operation(summary = "Получение всех документов", description = "Документ передается в байтах")
     @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = Document.class)))
@@ -111,7 +118,7 @@ public class DocumentController {
             content = @Content(schema = @Schema(implementation = InputStreamResource.class)))
     @GetMapping("/create")
     public ResponseEntity<InputStreamResource> createDoc() throws FileNotFoundException {
-        File file = new File(NEW_DOC_FILE);
+        File file = new File(docPath + "docECP.docx");
         InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + file.getName())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(file.length()).body(resource);
