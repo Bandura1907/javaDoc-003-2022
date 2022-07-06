@@ -3,7 +3,9 @@ package com.example.javadoc0032022.models;
 import com.example.javadoc0032022.models.token.ConfirmationToken;
 import com.example.javadoc0032022.models.token.RefreshToken;
 import com.example.javadoc0032022.models.token.ResetToken;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,6 +20,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Getter
 @Setter
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class User {
 
     @Id
@@ -65,10 +68,10 @@ public class User {
 
     @JsonIgnore
     @OneToMany(mappedBy = "senderUser", cascade = CascadeType.ALL)
-    private List<Document> documentSenderList;
+    private List<Package> packageSenderList;
 
     @JsonIgnore
     @OneToMany(mappedBy = "receiverUser", cascade = CascadeType.ALL)
-    private List<Document> documentReceiverUser;
+    private List<Package> packageReceiverList;
 
 }

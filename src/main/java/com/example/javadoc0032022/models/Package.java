@@ -1,9 +1,7 @@
 package com.example.javadoc0032022.models;
 
-import com.example.javadoc0032022.models.enums.DocumentStatus;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.ObjectIdGenerator;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,6 +9,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -18,31 +18,21 @@ import javax.persistence.*;
 @Getter
 @Setter
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
-public class Document {
+public class Package {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    private String docName;
+    private String name;
+    private LocalDateTime createAt;
 
-    private boolean draft;
+    @OneToMany(mappedBy = "aPackage", cascade = CascadeType.ALL)
+    private List<Document> documents;
 
-    @Enumerated(EnumType.STRING)
-    private DocumentStatus status;
-
-    @Lob
-    private byte[] file;
-
-    @JsonProperty("package")
     @ManyToOne
-    private Package aPackage;
+    private User senderUser;
 
-////    @JsonIgnore
-//    @ManyToOne
-//    private User senderUser;
-//
-////    @JsonIgnore
-//    @ManyToOne
-//    private User receiverUser;
+    @ManyToOne
+    private User receiverUser;
 }

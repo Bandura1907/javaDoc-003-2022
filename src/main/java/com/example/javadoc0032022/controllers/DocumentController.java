@@ -1,12 +1,14 @@
 package com.example.javadoc0032022.controllers;
 
 import com.example.javadoc0032022.models.Document;
+import com.example.javadoc0032022.models.Package;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.models.enums.DocumentStatus;
 import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.payload.response.DocUsersSubscribeResponse;
 import com.example.javadoc0032022.payload.response.MessageResponse;
+import com.example.javadoc0032022.repository.PackageRepository;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.services.DocumentService;
 import com.example.javadoc0032022.services.UserService;
@@ -16,7 +18,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -29,6 +30,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,64 +45,67 @@ public class DocumentController {
     //    private static final String NEW_DOC_FILE = "src/main/resources/static/documents/docECP.docx";
     @Value("${documents.files}")
     private String docPath;
-    private DocumentService documentService;
-    private UserService userService;
-    private RoleRepository roleRepository;
+    private final DocumentService documentService;
+    private final UserService userService;
+    private final RoleRepository roleRepository;
+    private final PackageRepository packageRepository;
 
-    public DocumentController(DocumentService documentService, UserService userService, RoleRepository roleRepository) {
+    public DocumentController(DocumentService documentService, UserService userService, RoleRepository roleRepository, PackageRepository packageRepository) {
         this.documentService = documentService;
         this.userService = userService;
         this.roleRepository = roleRepository;
+        this.packageRepository = packageRepository;
     }
 
-    @Operation(summary = "Получение всех документов", description = "Документ передается в байтах")
-    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = Document.class)))
+    @Operation(summary = "Получение всех пакетов", description = "Документ передается в байтах")
+    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = Package.class)))
     @GetMapping
-    public ResponseEntity<List<Document>> findAllDocuments() {
-        return ResponseEntity.ok(documentService.findAll());
+    public ResponseEntity<List<Package>> findAllDocuments() {
+        return ResponseEntity.ok(packageRepository.findAll());
     }
 
     @GetMapping("{id}")
     public ResponseEntity<?> findDocument(@PathVariable int id) {
-        Optional<Document> document = documentService.findById(id);
-        if (document.isEmpty())
-            return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
+        Optional<Package> aPackage = packageRepository.findById(id);
+        if (aPackage.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("package not found"), HttpStatus.NOT_FOUND);
 
-        return ResponseEntity.ok(document.get());
+        return ResponseEntity.ok(aPackage.get());
     }
 
-    @GetMapping("/download_all_documents")
-    public ResponseEntity<?> downloadZip() throws IOException {
-        Optional<User> user = userService.findByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
-//        Optional<User> user = userService.findById(2);
-        if (user.isEmpty())
-            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
-        Role roleUser = roleRepository.findByRole(ERole.ROLE_USER).get();
-        Role roleEmployee = roleRepository.findByRole(ERole.ROLE_EMPLOYEE).get();
+//    @GetMapping("/download_all_documents")
+//    public ResponseEntity<?> downloadZip() throws IOException {
+//        Optional<User> user = userService.findByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
+////        Optional<User> user = userService.findById(2);
+//        if (user.isEmpty())
+//            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
+//        Role roleUser = roleRepository.findByRole(ERole.ROLE_USER).get();
+//        Role roleEmployee = roleRepository.findByRole(ERole.ROLE_EMPLOYEE).get();
+//
+//        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+//        ZipOutputStream zipOut = new ZipOutputStream(bo);
+//
+//        if (user.get().getRoles().contains(roleUser)) {
+//            for (Document item : user.get().getDocumentReceiverUser()) {
+//                ZipEntry zipEntry = new ZipEntry(item.getDocName());
+//                zipOut.putNextEntry(zipEntry);
+//                zipOut.write(item.getFile());
+//                zipOut.closeEntry();
+//            }
+//        } else if (user.get().getRoles().contains(roleEmployee)) {
+//            for (Document item : user.get().getDocumentSenderList()) {
+//                ZipEntry zipEntry = new ZipEntry(item.getDocName());
+//                zipOut.putNextEntry(zipEntry);
+//                zipOut.write(item.getFile());
+//                zipOut.closeEntry();
+//            }
+//        }
+//
+//        zipOut.close();
+//        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
+//                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
+//    }
 
-        ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        ZipOutputStream zipOut = new ZipOutputStream(bo);
-
-        if (user.get().getRoles().contains(roleUser)) {
-            for (Document item : user.get().getDocumentReceiverUser()) {
-                ZipEntry zipEntry = new ZipEntry(item.getDocName());
-                zipOut.putNextEntry(zipEntry);
-                zipOut.write(item.getFile());
-                zipOut.closeEntry();
-            }
-        } else if (user.get().getRoles().contains(roleEmployee)) {
-            for (Document item : user.get().getDocumentSenderList()) {
-                ZipEntry zipEntry = new ZipEntry(item.getDocName());
-                zipOut.putNextEntry(zipEntry);
-                zipOut.write(item.getFile());
-                zipOut.closeEntry();
-            }
-        }
-
-        zipOut.close();
-        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
-    }
 
     @GetMapping("/view_users_subscribe/{documentId}")
     public ResponseEntity<?> viewUsersSubscribe(@PathVariable int documentId) {
@@ -109,7 +115,7 @@ public class DocumentController {
 
         if (document.get().getStatus().equals(DocumentStatus.SIGNED)) {
             return ResponseEntity.ok(new DocUsersSubscribeResponse(document.get().getId(), document.get().getStatus(),
-                    document.get().getSenderUser(), document.get().getReceiverUser()));
+                    document.get().getAPackage().getSenderUser(), document.get().getAPackage().getReceiverUser()));
         } else return ResponseEntity.ok(new MessageResponse("the document is not signed"));
     }
 
@@ -130,15 +136,26 @@ public class DocumentController {
                     content = @Content(schema = @Schema(implementation = MessageResponse.class))),
             @ApiResponse(responseCode = "200", description = "Документ успешно загружен")
     })
-    @GetMapping("/download/{documentId}")
-    public ResponseEntity<?> downloadDoc(@Parameter(required = true, description = "Document ID") @PathVariable int documentId) {
-        Optional<Document> document = documentService.findById(documentId);
-        if (document.isEmpty())
-            return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
+    @GetMapping("/download")
+    public ResponseEntity<?> downloadDoc(@RequestParam(value = "document_id", required = false) Integer documentId,
+                                         @RequestParam(value = "user_id", required = false) Integer userId) throws IOException {
 
-        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" +
-                        document.get().getDocName()).contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .contentLength(document.get().getFile().length).body(document.get().getFile());
+        if (documentId != null) {
+            Optional<Document> document = documentService.findById(documentId);
+            if (document.isEmpty())
+                return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
+
+            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" +
+                            document.get().getDocName()).contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .contentLength(document.get().getFile().length).body(document.get().getFile());
+        } else if (userId != null) {
+            Optional<User> user = userService.findById(userId);
+           return downloadZipFiles(user);
+        }
+
+        Optional<User> user = userService.findByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
+        return downloadZipFiles(user);
+
     }
 
     @Operation(summary = "Проверка подписи документа")
@@ -168,15 +185,20 @@ public class DocumentController {
     @PostMapping("/upload")
     public ResponseEntity<MessageResponse> uploadToDb(
             @Parameter(required = true, description = "Передавать в Form Data. Параметр принимает файлы")
-            @RequestParam("file")
-            MultipartFile[] file,
+            @RequestParam("file") MultipartFile[] file,
+            @RequestParam("name") String name,
             @Parameter(description = "isDraft это черновик или нет. Необъязательно. Тоже передавать в form data")
-            @RequestParam(value = "isDraft", required = false, defaultValue = "false")
-            boolean draft) {
+            @RequestParam(value = "isDraft", required = false, defaultValue = "false") boolean draft) {
+
+        Package aPackage = new Package();
+        List<Document> documents = new ArrayList<>();
         Optional<User> user = userService.findByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
         if (user.isEmpty())
             return new ResponseEntity<>(new MessageResponse("user not found"),
                     HttpStatus.NOT_FOUND);
+
+        aPackage.setName(name);
+        aPackage.setSenderUser(user.get());
 
         try {
             for (MultipartFile item : file) {
@@ -185,10 +207,14 @@ public class DocumentController {
                 doc.setDocName(fileName);
                 doc.setFile(item.getBytes());
                 doc.setDraft(draft);
-                doc.setSenderUser(user.get());
                 doc.setStatus(DocumentStatus.NOT_SIGNED);
-                documentService.save(doc);
+                doc.setAPackage(aPackage);
+                documents.add(doc);
             }
+
+            aPackage.setDocuments(documents);
+            aPackage.setCreateAt(LocalDateTime.now());
+            packageRepository.save(aPackage);
 
             return ResponseEntity.ok(new MessageResponse("upload"));
         } catch (Exception e) {
@@ -203,19 +229,19 @@ public class DocumentController {
                     content = @Content(schema = @Schema(implementation = MessageResponse.class))),
             @ApiResponse(responseCode = "200", description = "Документ отправлен на соглосование")
     })
-    @PutMapping("/send_to_client_agreed/{userId}/{documentId}")
+    @PutMapping("/send_to_client_agreed/{userId}/{packageId}")
     public ResponseEntity<MessageResponse> sendToClientAgreed(@Parameter(required = true, description = "User ID")
                                                               @PathVariable int userId,
                                                               @Parameter(required = true, description = "Document ID")
-                                                              @PathVariable int documentId) {
+                                                              @PathVariable int packageId) {
         Optional<User> user = userService.findById(userId);
-        Optional<Document> document = documentService.findById(documentId);
-        if (user.isEmpty() || document.isEmpty())
+        Optional<Package> aPackage = packageRepository.findById(packageId);
+        if (user.isEmpty() || aPackage.isEmpty())
             return new ResponseEntity<>(new MessageResponse("User or document not found"), HttpStatus.NOT_FOUND);
-
-        document.get().setStatus(DocumentStatus.SEND_FOR_APPROVAL);
-        document.get().setReceiverUser(user.get());
-        documentService.save(document.get());
+        aPackage.get().getDocuments().forEach(doc -> doc.setStatus(DocumentStatus.SEND_FOR_APPROVAL));
+//        document.get().setStatus(DocumentStatus.SEND_FOR_APPROVAL);
+        aPackage.get().setReceiverUser(user.get());
+        packageRepository.save(aPackage.get());
         return ResponseEntity.ok(new MessageResponse("sent to client " + userId));
     }
 
@@ -231,13 +257,16 @@ public class DocumentController {
                                                    @Parameter(required = true, description = "Document ID")
                                                    @PathVariable int documentId) {
         Optional<User> user = userService.findById(userId);
-        Optional<Document> document = documentService.findById(documentId);
-        if (user.isEmpty() || document.isEmpty())
+        Optional<Package> aPackage = packageRepository.findById(documentId);
+        if (user.isEmpty() || aPackage.isEmpty())
             return new ResponseEntity<>(new MessageResponse("User or document not found"), HttpStatus.NOT_FOUND);
+        aPackage.get().getDocuments().forEach(doc -> doc.setStatus(DocumentStatus.SENT_FOR_SIGNATURE));
+//        for (Document doc : aPackage.get().getDocuments()) {
+//            doc.setStatus(DocumentStatus.SENT_FOR_SIGNATURE);
+//        }
 
-        document.get().setStatus(DocumentStatus.SENT_FOR_SIGNATURE);
-        document.get().setReceiverUser(user.get());
-        documentService.save(document.get());
+        aPackage.get().setReceiverUser(user.get());
+        packageRepository.save(aPackage.get());
         return ResponseEntity.ok(new MessageResponse("sent to client " + userId));
     }
 
@@ -283,5 +312,45 @@ public class DocumentController {
                                                           @PathVariable int id) {
         documentService.deleteById(id);
         return ResponseEntity.ok(new MessageResponse("Document deleted"));
+    }
+
+    private ResponseEntity<?> downloadZipFiles(Optional<User> user) throws IOException {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        ZipOutputStream zipOut = new ZipOutputStream(bo);
+
+        Role roleUser = roleRepository.findByRole(ERole.ROLE_USER).get();
+        Role roleEmployee = roleRepository.findByRole(ERole.ROLE_EMPLOYEE).get();
+        if (user.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
+
+        if (user.get().getRoles().contains(roleEmployee)) {
+//            for (Document doc : user.get().getDocumentSenderList()) {
+//                ZipEntry zipEntry = new ZipEntry(doc.getDocName());
+//                zipOut.putNextEntry(zipEntry);
+//                zipOut.write(doc.getFile());
+//                zipOut.closeEntry();
+//            }
+            for (Package pack : user.get().getPackageSenderList()) {
+                for (Document doc : pack.getDocuments()) {
+                    ZipEntry zipEntry = new ZipEntry(doc.getDocName());
+                    zipOut.putNextEntry(zipEntry);
+                    zipOut.write(doc.getFile());
+                    zipOut.closeEntry();
+                }
+            }
+        } else if (user.get().getRoles().contains(roleUser)) {
+            for (Package pack : user.get().getPackageReceiverList()) {
+                for (Document doc : pack.getDocuments()) {
+                    ZipEntry zipEntry = new ZipEntry(doc.getDocName());
+                    zipOut.putNextEntry(zipEntry);
+                    zipOut.write(doc.getFile());
+                    zipOut.closeEntry();
+                }
+            }
+        }
+
+        zipOut.close();
+        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
     }
 }
