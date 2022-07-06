@@ -145,9 +145,11 @@ public class DocumentController {
             if (document.isEmpty())
                 return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
 
-            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" +
-                            document.get().getDocName()).contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .contentLength(document.get().getFile().length).body(document.get().getFile());
+            return ResponseEntity.ok(Map.of("name", document.get().getDocName(),
+                    "file", document.get().getFile()));
+//            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" +
+//                            document.get().getDocName()).contentType(MediaType.APPLICATION_OCTET_STREAM)
+//                    .contentLength(document.get().getFile().length).body(document.get().getFile());
         } else if (userId != null) {
             Optional<User> user = userService.findById(userId);
            return downloadZipFiles(user);
@@ -350,7 +352,11 @@ public class DocumentController {
         }
 
         zipOut.close();
-        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
+        return ResponseEntity.ok(Map.of(
+                "name", "documents.zip",
+                "file", bo.toByteArray()
+        ));
+//        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
+//                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
     }
 }
