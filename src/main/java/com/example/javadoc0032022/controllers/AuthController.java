@@ -158,6 +158,12 @@ public class AuthController {
         user.setSurName(registerRequest.getSurName());
         user.setEmail(registerRequest.getEmail());
         user.setPhoneNumber(registerRequest.getPhoneNumber());
+        user.setNameOrganization(registerRequest.getNameOrganization());
+        user.setMainStateRegistrationNumber(registerRequest.getMainStateRegistrationNumber());
+        user.setIdentificationNumber(registerRequest.getIdentificationNumber());
+        user.setPosition(registerRequest.getPosition());
+        user.setSubdivision(registerRequest.getSubdivision());
+
         user.setNonBlocked(true);
         user.setTimeLocked(false);
         user.setFirstLogin(true);
@@ -250,6 +256,11 @@ public class AuthController {
                 userDetails.getSurName(),
                 userDetails.getEmail(),
                 userDetails.getPhoneNumber(),
+                userDetails.getNameOrganization(),
+                userDetails.getMainStateRegistrationNumber(),
+                userDetails.getIdentificationNumber(),
+                userDetails.getPosition(),
+                userDetails.getSubdivision(),
                 userDetails.isNonBlocked(),
                 userDetails.isFirstLogin())
         );

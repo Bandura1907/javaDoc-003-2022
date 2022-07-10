@@ -6,7 +6,6 @@ import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.models.token.ConfirmationToken;
 import com.example.javadoc0032022.models.token.ResetToken;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
-import com.example.javadoc0032022.payload.response.UserResponse;
 import com.example.javadoc0032022.repository.ResetTokenRepository;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.repository.UserRepository;
@@ -56,31 +55,31 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    public UserResponse findByIdUserResponse(int id) {
-        Optional<User> user = userRepository.findById(id);
-        Set<String> roles = new HashSet<>();
-        if (user.isPresent()) {
-            for (Role role : user.get().getRoles()) {
-                switch (role.getRole()) {
-                    case ROLE_USER:
-                        roles.add("user");
-                        break;
-                    case ROLE_ADMIN:
-                        roles.add("admin");
-                        break;
-                    case ROLE_EMPLOYEE:
-                        roles.add("employee");
-                        break;
-                }
-            }
-            return new UserResponse(user.get().getId(), user.get().getLogin(), user.get().getPassword(), roles, user.get().getName(),
-                    user.get().getLastName(), user.get().getSurName(), user.get().getEmail(), user.get().getPhoneNumber(),
-                    user.get().getCountDocuments(), user.get().isExistEcp(), user.get().isTimeLocked(), user.get().isPasswordExpired(),
-                    user.get().isNonBlocked(), user.get().getLoginAttempts(), user.get().getBlockTime(),
-                    user.get().isEnabled(), user.get().isFirstLogin());
-        } else return new UserResponse();
-
-    }
+//    public UserResponse findByIdUserResponse(int id) {
+//        Optional<User> user = userRepository.findById(id);
+//        Set<String> roles = new HashSet<>();
+//        if (user.isPresent()) {
+//            for (Role role : user.get().getRoles()) {
+//                switch (role.getRole()) {
+//                    case ROLE_USER:
+//                        roles.add("user");
+//                        break;
+//                    case ROLE_ADMIN:
+//                        roles.add("admin");
+//                        break;
+//                    case ROLE_EMPLOYEE:
+//                        roles.add("employee");
+//                        break;
+//                }
+//            }
+//            return new UserResponse(user.get().getId(), user.get().getLogin(), user.get().getPassword(), roles, user.get().getName(),
+//                    user.get().getLastName(), user.get().getSurName(), user.get().getEmail(), user.get().getPhoneNumber(),
+//                    user.get().getCountDocuments(), user.get().isExistEcp(), user.get().isTimeLocked(), user.get().isPasswordExpired(),
+//                    user.get().isNonBlocked(), user.get().getLoginAttempts(), user.get().getBlockTime(),
+//                    user.get().isEnabled(), user.get().isFirstLogin());
+//        } else return new UserResponse();
+//
+//    }
 
     public Optional<User> findByLogin(String login) {
         return userRepository.findByLogin(login);
@@ -140,10 +139,17 @@ public class UserService {
         user.setEmail(infoUserRequest.getEmail() == null ? user.getEmail() : infoUserRequest.getEmail());
         user.setPhoneNumber(infoUserRequest.getPhoneNumber() == null ? user.getPhoneNumber() : infoUserRequest.getPhoneNumber());
         user.setRoles(infoUserRequest.getRoles() == null ? user.getRoles() : roleSet);
-        user.setCountDocuments(infoUserRequest.getCountDocuments() == null ? user.getCountDocuments() : infoUserRequest.getCountDocuments());
+
+        user.setNameOrganization(infoUserRequest.getNameOrganization() == null ? user.getNameOrganization() :
+                infoUserRequest.getNameOrganization());
+        user.setMainStateRegistrationNumber(infoUserRequest.getMainStateRegistrationNumber() == null ? user.getMainStateRegistrationNumber() :
+                infoUserRequest.getMainStateRegistrationNumber());
+        user.setSubdivision(infoUserRequest.getSubdivision() == null ? user.getSubdivision() : infoUserRequest.getSubdivision());
+        user.setPosition(infoUserRequest.getPosition() == null ? user.getPosition() : infoUserRequest.getPosition());
+        user.setIdentificationNumber(infoUserRequest.getIdentificationNumber() == null ? user.getIdentificationNumber() :
+                infoUserRequest.getIdentificationNumber());
+
         user.setFirstLogin(infoUserRequest.isFirstLogin() || user.isFirstLogin());
-//        user.setExistEcp(infoUserRequest.isExistEcp() || user.isExistEcp());
-//        user.setPasswordExpired(infoUserRequest.isPasswordExpired() || user.isPasswordExpired());
 
         userRepository.save(user);
         return user;

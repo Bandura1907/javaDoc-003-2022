@@ -5,6 +5,7 @@ import com.example.javadoc0032022.models.token.RefreshToken;
 import com.example.javadoc0032022.models.token.ResetToken;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,10 @@ import java.util.Set;
 @Getter
 @Setter
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+@JsonIgnoreProperties(value = {
+        "isTimeLocked", "isPasswordExpired", "loginAttempts", "blockTime", "isNonBlocked", "confirmationTokenList",
+        "refreshToken", "packageSenderList", "packageReceiverList", "resetToken", "isTimeLocked"
+})
 public class User {
 
     @Id
@@ -39,38 +44,38 @@ public class User {
     private String name;
     private String lastName;
     private String surName;
-
     private String email;
     private String phoneNumber;
-    private int countDocuments;
 
-    private boolean existEcp;
+    private String nameOrganization;
+    private String mainStateRegistrationNumber;
+    private String identificationNumber;
+    private String position;
+    private String subdivision;
+
 
     private boolean isTimeLocked;
     private boolean isPasswordExpired;
     private int loginAttempts;
     private long blockTime;
     private boolean isNonBlocked;
+
     private boolean enabled;
     private boolean firstLogin;
 
-    @JsonIgnore
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<ConfirmationToken> confirmationTokenList;
 
-    @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
     private List<RefreshToken> refreshToken;
 
-    @JsonIgnore
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "user")
     private ResetToken resetToken;
 
-    @JsonIgnore
     @OneToMany(mappedBy = "senderUser", cascade = CascadeType.ALL)
     private List<Package> packageSenderList;
 
-    @JsonIgnore
     @OneToMany(mappedBy = "receiverUser", cascade = CascadeType.ALL)
     private List<Package> packageReceiverList;
 

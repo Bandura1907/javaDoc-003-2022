@@ -31,7 +31,11 @@ public class InfoUserRequest {
     @Schema(description = "телефон", example = "+380994354323")
     private String phoneNumber;
 
-    private Integer countDocuments;
+    private String nameOrganization;
+    private String mainStateRegistrationNumber;
+    private String identificationNumber;
+    private String position;
+    private String subdivision;
 
     private boolean firstLogin;
 

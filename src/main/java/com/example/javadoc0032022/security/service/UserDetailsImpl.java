@@ -24,8 +24,12 @@ public class UserDetailsImpl implements UserDetails {
     private String surName;
     private String email;
     private String phoneNumber;
-    private int countDocuments;
-    private boolean existEcp;
+
+    private String nameOrganization;
+    private String mainStateRegistrationNumber;
+    private String identificationNumber;
+    private String position;
+    private String subdivision;
 
     private boolean isTimeLocked;
     private boolean isPasswordExpired;
@@ -39,10 +43,27 @@ public class UserDetailsImpl implements UserDetails {
         List<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.getRole().name()))
                 .collect(Collectors.toList());
-        return new UserDetailsImpl(user.getId(), user.getLogin(), user.getPassword(), authorities, user.getName(),
-                user.getLastName(), user.getSurName(), user.getEmail(), user.getPhoneNumber(), user.getCountDocuments(),
-                user.isExistEcp(), user.isTimeLocked(), user.isPasswordExpired(), user.isNonBlocked(), user.getLoginAttempts(),
-                user.getBlockTime(), user.isEnabled(), user.isFirstLogin());
+        return new UserDetailsImpl(user.getId(),
+                user.getLogin(),
+                user.getPassword(),
+                authorities,
+                user.getName(),
+                user.getLastName(),
+                user.getSurName(),
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getNameOrganization(),
+                user.getMainStateRegistrationNumber(),
+                user.getIdentificationNumber(),
+                user.getPosition(),
+                user.getSubdivision(),
+                user.isTimeLocked(),
+                user.isPasswordExpired(),
+                user.isNonBlocked(),
+                user.getLoginAttempts(),
+                user.getBlockTime(),
+                user.isEnabled(),
+                user.isFirstLogin());
     }
 
     @Override

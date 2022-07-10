@@ -34,4 +34,10 @@ public class RegisterRequest {
 
     @Schema(description = "Телефон", example = "+380995785755")
     private String phoneNumber;
+
+    private String nameOrganization;
+    private String mainStateRegistrationNumber;
+    private String identificationNumber;
+    private String position;
+    private String subdivision;
 }
