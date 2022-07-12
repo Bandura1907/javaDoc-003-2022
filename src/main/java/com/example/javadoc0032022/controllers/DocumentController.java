@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -47,10 +48,19 @@ public class DocumentController {
         return ResponseEntity.ok(packageRepository.findAll());
     }
 
+    @GetMapping("{packId}")
+    public ResponseEntity<?> getPackage(@PathVariable int packId) {
+        Optional<Package> pack = packageRepository.findById(packId);
+        if (pack.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
+
+        return ResponseEntity.ok(pack.get());
+    }
+
     @PostMapping("/create")
     public ResponseEntity<?> createDocument(@RequestParam("file") MultipartFile[] file,
                                             @RequestParam("comment") String comment,
-                                            @RequestParam("name")String name) throws IOException {
+                                            @RequestParam("name") String name) throws IOException {
         Optional<User> userEmployee = userService.findByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
         if (userEmployee.isEmpty())
             return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
@@ -61,6 +71,7 @@ public class DocumentController {
         pack.setComment(comment);
         pack.setName(name);
         pack.setSenderUser(userEmployee.get());
+        pack.setDraft(false);
 
         for (MultipartFile item : file) {
             String nameFile = StringUtils.cleanPath(item.getOriginalFilename());
@@ -75,9 +86,9 @@ public class DocumentController {
         }
 
         pack.setDocuments(documents);
-        packageRepository.save(pack);
+        Package savePack = packageRepository.save(pack);
 
-        return ResponseEntity.ok(new MessageResponse("document create"));
+        return ResponseEntity.ok(Map.of("packageId", savePack.getId()));
     }
 
     @PutMapping("/send/{packId}/{userId}")

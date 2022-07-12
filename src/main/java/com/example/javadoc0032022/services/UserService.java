@@ -6,6 +6,7 @@ import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.models.token.ConfirmationToken;
 import com.example.javadoc0032022.models.token.ResetToken;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
+import com.example.javadoc0032022.payload.response.UserResponse;
 import com.example.javadoc0032022.repository.ResetTokenRepository;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.repository.UserRepository;
@@ -55,31 +56,42 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-//    public UserResponse findByIdUserResponse(int id) {
-//        Optional<User> user = userRepository.findById(id);
-//        Set<String> roles = new HashSet<>();
-//        if (user.isPresent()) {
-//            for (Role role : user.get().getRoles()) {
-//                switch (role.getRole()) {
-//                    case ROLE_USER:
-//                        roles.add("user");
-//                        break;
-//                    case ROLE_ADMIN:
-//                        roles.add("admin");
-//                        break;
-//                    case ROLE_EMPLOYEE:
-//                        roles.add("employee");
-//                        break;
-//                }
-//            }
-//            return new UserResponse(user.get().getId(), user.get().getLogin(), user.get().getPassword(), roles, user.get().getName(),
-//                    user.get().getLastName(), user.get().getSurName(), user.get().getEmail(), user.get().getPhoneNumber(),
-//                    user.get().getCountDocuments(), user.get().isExistEcp(), user.get().isTimeLocked(), user.get().isPasswordExpired(),
-//                    user.get().isNonBlocked(), user.get().getLoginAttempts(), user.get().getBlockTime(),
-//                    user.get().isEnabled(), user.get().isFirstLogin());
-//        } else return new UserResponse();
-//
-//    }
+    public UserResponse findByIdUserResponse(int id) {
+        UserResponse userResponse = new UserResponse();
+        Optional<User> user = userRepository.findById(id);
+        Set<String> roles = new HashSet<>();
+        if (user.isPresent()) {
+            for (Role role : user.get().getRoles()) {
+                switch (role.getRole()) {
+                    case ROLE_USER:
+                        roles.add("user");
+                        break;
+                    case ROLE_ADMIN:
+                        roles.add("admin");
+                        break;
+                    case ROLE_EMPLOYEE:
+                        roles.add("employee");
+                        break;
+                }
+            }
+            userResponse.setId(user.get().getId());
+            userResponse.setLogin(user.get().getLogin());
+            userResponse.setRoles(roles);
+            userResponse.setName(user.get().getName());
+            userResponse.setLastName(user.get().getLastName());
+            userResponse.setSurName(user.get().getSurName());
+            userResponse.setEmail(user.get().getEmail());
+            userResponse.setPhoneNumber(user.get().getPhoneNumber());
+            userResponse.setNameOrganization(user.get().getNameOrganization());
+            userResponse.setMainStateRegistrationNumber(user.get().getMainStateRegistrationNumber());
+            userResponse.setIdentificationNumber(user.get().getIdentificationNumber());
+            userResponse.setPosition(user.get().getPosition());
+            userResponse.setSubdivision(user.get().getSubdivision());
+
+            return userResponse;
+        } else return new UserResponse();
+
+    }
 
     public Optional<User> findByLogin(String login) {
         return userRepository.findByLogin(login);

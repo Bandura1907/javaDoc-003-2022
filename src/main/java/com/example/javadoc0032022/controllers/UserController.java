@@ -7,6 +7,7 @@ import com.example.javadoc0032022.payload.request.ChangePasswordRequest;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
 import com.example.javadoc0032022.payload.request.ResetPasswordRequest;
 import com.example.javadoc0032022.payload.response.MessageResponse;
+import com.example.javadoc0032022.payload.response.UserResponse;
 import com.example.javadoc0032022.services.ConfirmationTokenService;
 import com.example.javadoc0032022.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -61,11 +62,12 @@ public class UserController {
     @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = User.class)))
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@Parameter(description = "ID user", required = true) @PathVariable int id) {
-        Optional<User> user = userService.findById(id);
-        if (user.isEmpty())
-            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
+//        Optional<User> user = userService.findById(id);
+//        if (user.isEmpty())
+//            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
+        UserResponse userResponse = userService.findByIdUserResponse(id);
 
-        return ResponseEntity.ok(user.get());
+        return ResponseEntity.ok(userResponse);
     }
 
     @PostMapping("/send_confirmation_token/{userId}")
