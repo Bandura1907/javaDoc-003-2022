@@ -2,13 +2,21 @@ package com.example.javadoc0032022.controllers;
 
 import com.example.javadoc0032022.models.Document;
 import com.example.javadoc0032022.models.Package;
+import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.models.enums.DocumentStatus;
+import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.payload.response.MessageResponse;
 import com.example.javadoc0032022.repository.PackageRepository;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.services.DocumentService;
 import com.example.javadoc0032022.services.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,12 +25,15 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/api/doc")
@@ -55,6 +66,41 @@ public class DocumentController {
             return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
 
         return ResponseEntity.ok(pack.get());
+    }
+
+    @Operation(summary = "Скачать документ")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Документ не найден"),
+            @ApiResponse(responseCode = "200", description = "Документ успешно загружен")
+    })
+    @GetMapping("/download")
+    public ResponseEntity<?> downloadDoc(@RequestParam(value = "packId", required = false) Integer packId,
+                                         @RequestParam(value = "userId", required = false) Integer userId) throws IOException {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        ZipOutputStream zipOut = new ZipOutputStream(bo);
+
+        if (packId != null) {
+            Optional<Package> pack = packageRepository.findById(packId);
+            if (pack.isEmpty())
+                return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
+
+            for (Document doc : pack.get().getDocuments()) {
+                ZipEntry zipEntry = new ZipEntry(doc.getName());
+                zipOut.putNextEntry(zipEntry);
+                zipOut.write(doc.getFile());
+                zipOut.closeEntry();
+            }
+            zipOut.close();
+            return ResponseEntity.ok(Map.of("name", "documents.zip",
+                    "file", bo.toByteArray()));
+
+        } else if (userId != null) {
+            Optional<User> user = userService.findById(userId);
+            return downloadZipFiles(user);
+        }
+
+        Optional<User> user = userService.findByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
+        return downloadZipFiles(user);
     }
 
     @PostMapping("/create")
@@ -129,6 +175,12 @@ public class DocumentController {
         return ResponseEntity.ok(new MessageResponse("documents save to draft"));
     }
 
+
+    @DeleteMapping("{packId}")
+    public ResponseEntity<MessageResponse> deletePackage(@PathVariable int packId) {
+        packageRepository.deleteById(packId);
+        return ResponseEntity.ok(new MessageResponse("Package delete"));
+    }
 
 //    @Operation(summary = "Получение всех пакетов", description = "Документ передается в байтах")
 //    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = Package.class)))
@@ -313,41 +365,42 @@ public class DocumentController {
 //        return ResponseEntity.ok(new MessageResponse("sent to client " + userId));
 //    }
 //
-//    @Operation(summary = "Смена статуса документа",
-//            description = "статус документа меняется через индекс: 0 - документ согласован, 1 - документ подписан, " +
-//                    "2 - отказано, 3 - отменено")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "404", description = "Документ или индекс не найден",
-//                    content = @Content(schema = @Schema(implementation = MessageResponse.class))),
-//            @ApiResponse(responseCode = "200", description = "Статус изменен",
-//                    content = @Content(schema = @Schema(implementation = Document.class)))
-//    })
-//    @PutMapping("/change_status/{idDocument}/{index}")
-//    public ResponseEntity<?> changeStatusDocument(@Parameter(required = true, description = "Index") @PathVariable int index,
-//                                                  @Parameter(required = true, description = "Document ID") @PathVariable int idDocument) {
-//        Optional<Document> document = documentService.findById(idDocument);
-//        if (document.isEmpty())
-//            return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
-//
-//        switch (index) {
-//            case 0:
-//                documentService.agreed(document.get());
-//                break;
-//            case 1:
-//                documentService.subscribe(document.get());
-//                break;
-//            case 2:
-//                documentService.refuse(document.get());
-//                break;
-//            case 3:
-//                documentService.reject(document.get());
-//                break;
-//            default:
-//                return new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
-//        }
-//
-//        return ResponseEntity.ok(document.get());
-//    }
+
+    @Operation(summary = "Смена статуса документа",
+            description = "статус документа меняется через индекс: 0 - документ согласован, 1 - документ подписан, " +
+                    "2 - отказано, 3 - отменено")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Документ или индекс не найден",
+                    content = @Content(schema = @Schema(implementation = MessageResponse.class))),
+            @ApiResponse(responseCode = "200", description = "Статус изменен",
+                    content = @Content(schema = @Schema(implementation = Document.class)))
+    })
+    @PutMapping("/change_status/{idDocument}/{index}")
+    public ResponseEntity<?> changeStatusDocument(@Parameter(required = true, description = "Index") @PathVariable int index,
+                                                  @Parameter(required = true, description = "Document ID") @PathVariable int idDocument) {
+        Optional<Document> document = documentService.findById(idDocument);
+        if (document.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
+
+        switch (index) {
+            case 0:
+                documentService.agreed(document.get());
+                break;
+            case 1:
+                documentService.subscribe(document.get());
+                break;
+            case 2:
+                documentService.refuse(document.get());
+                break;
+            case 3:
+                documentService.reject(document.get());
+                break;
+            default:
+                return new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
+        }
+
+        return ResponseEntity.ok(document.get());
+    }
 //
 //    @Operation(summary = "Удаление документа")
 //    @DeleteMapping("{id}")
@@ -357,47 +410,47 @@ public class DocumentController {
 //        return ResponseEntity.ok(new MessageResponse("Document deleted"));
 //    }
 //
-//    private ResponseEntity<?> downloadZipFiles(Optional<User> user) throws IOException {
-//        ByteArrayOutputStream bo = new ByteArrayOutputStream();
-//        ZipOutputStream zipOut = new ZipOutputStream(bo);
-//
-//        Role roleUser = roleRepository.findByRole(ERole.ROLE_USER).get();
-//        Role roleEmployee = roleRepository.findByRole(ERole.ROLE_EMPLOYEE).get();
-//        if (user.isEmpty())
-//            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
-//
-//        if (user.get().getRoles().contains(roleEmployee)) {
-////            for (Document doc : user.get().getDocumentSenderList()) {
-////                ZipEntry zipEntry = new ZipEntry(doc.getDocName());
-////                zipOut.putNextEntry(zipEntry);
-////                zipOut.write(doc.getFile());
-////                zipOut.closeEntry();
-////            }
-//            for (Package pack : user.get().getPackageSenderList()) {
-//                for (Document doc : pack.getDocuments()) {
-//                    ZipEntry zipEntry = new ZipEntry(doc.getDocName());
-//                    zipOut.putNextEntry(zipEntry);
-//                    zipOut.write(doc.getFile());
-//                    zipOut.closeEntry();
-//                }
+    private ResponseEntity<?> downloadZipFiles(Optional<User> user) throws IOException {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        ZipOutputStream zipOut = new ZipOutputStream(bo);
+
+        Role roleUser = roleRepository.findByRole(ERole.ROLE_USER).get();
+        Role roleEmployee = roleRepository.findByRole(ERole.ROLE_EMPLOYEE).get();
+        if (user.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
+
+        if (user.get().getRoles().contains(roleEmployee)) {
+//            for (Document doc : user.get().getDocumentSenderList()) {
+//                ZipEntry zipEntry = new ZipEntry(doc.getDocName());
+//                zipOut.putNextEntry(zipEntry);
+//                zipOut.write(doc.getFile());
+//                zipOut.closeEntry();
 //            }
-//        } else if (user.get().getRoles().contains(roleUser)) {
-//            for (Package pack : user.get().getPackageReceiverList()) {
-//                for (Document doc : pack.getDocuments()) {
-//                    ZipEntry zipEntry = new ZipEntry(doc.getDocName());
-//                    zipOut.putNextEntry(zipEntry);
-//                    zipOut.write(doc.getFile());
-//                    zipOut.closeEntry();
-//                }
-//            }
-//        }
-//
-//        zipOut.close();
-//        return ResponseEntity.ok(Map.of(
-//                "name", "documents.zip",
-//                "file", bo.toByteArray()
-//        ));
-////        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
-////                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
-//    }
+            for (Package pack : user.get().getPackageSenderList()) {
+                for (Document doc : pack.getDocuments()) {
+                    ZipEntry zipEntry = new ZipEntry(doc.getName());
+                    zipOut.putNextEntry(zipEntry);
+                    zipOut.write(doc.getFile());
+                    zipOut.closeEntry();
+                }
+            }
+        } else if (user.get().getRoles().contains(roleUser)) {
+            for (Package pack : user.get().getPackageReceiverList()) {
+                for (Document doc : pack.getDocuments()) {
+                    ZipEntry zipEntry = new ZipEntry(doc.getName());
+                    zipOut.putNextEntry(zipEntry);
+                    zipOut.write(doc.getFile());
+                    zipOut.closeEntry();
+                }
+            }
+        }
+
+        zipOut.close();
+        return ResponseEntity.ok(Map.of(
+                "name", "documents.zip",
+                "file", bo.toByteArray()
+        ));
+//        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
+//                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
+    }
 }
