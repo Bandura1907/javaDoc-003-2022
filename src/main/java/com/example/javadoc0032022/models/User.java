@@ -21,7 +21,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Getter
 @Setter
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @JsonIgnoreProperties(value = {
         "isTimeLocked", "isPasswordExpired", "loginAttempts", "blockTime", "isNonBlocked", "confirmationTokenList",
         "refreshToken", "packageSenderList", "packageReceiverList", "resetToken", "isTimeLocked"

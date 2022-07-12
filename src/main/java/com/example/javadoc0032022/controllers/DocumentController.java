@@ -59,13 +59,13 @@ public class DocumentController {
         return ResponseEntity.ok(packageRepository.findAll());
     }
 
-    @GetMapping("/{status}")
+    @GetMapping("status/{status}")
     public ResponseEntity<?> documentStatusList(@PathVariable DocumentStatus status) {
         List<Package> packageList = packageRepository.findAllByPackageStatus(status);
         return ResponseEntity.ok(packageList);
     }
 
-//    @GetMapping("{packId}")
+    @GetMapping("{packId}")
     public ResponseEntity<?> getPackage(@PathVariable int packId) {
         Optional<Package> pack = packageRepository.findById(packId);
         if (pack.isEmpty())
