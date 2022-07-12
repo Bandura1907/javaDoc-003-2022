@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
@@ -24,12 +25,12 @@ public class Document {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    private String docName;
-
-    private boolean draft;
+    private String name;
 
     @Enumerated(EnumType.STRING)
     private DocumentStatus status;
+
+    private LocalDateTime createAt;
 
     @Lob
     private byte[] file;
