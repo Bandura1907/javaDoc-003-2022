@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -27,6 +28,7 @@ public class Package {
     private String comment;
     private String name;
     private boolean draft;
+    private LocalDateTime createAt;
 
     @Enumerated(EnumType.STRING)
     private DocumentStatus packageStatus;
@@ -34,11 +36,11 @@ public class Package {
     @OneToMany(mappedBy = "aPackage", cascade = CascadeType.ALL)
     private List<Document> documents;
 
-    @JsonIdentityReference(alwaysAsId = true)
+//    @JsonIdentityReference(alwaysAsId = true)
     @ManyToOne
     private User senderUser;
 
-    @JsonIdentityReference(alwaysAsId = true)
+//    @JsonIdentityReference(alwaysAsId = true)
     @ManyToOne
     private User receiverUser;
 

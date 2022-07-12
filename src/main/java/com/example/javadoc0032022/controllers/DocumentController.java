@@ -59,7 +59,13 @@ public class DocumentController {
         return ResponseEntity.ok(packageRepository.findAll());
     }
 
-    @GetMapping("{packId}")
+    @GetMapping("/{status}")
+    public ResponseEntity<?> documentStatusList(@PathVariable DocumentStatus status) {
+        List<Package> packageList = packageRepository.findAllByPackageStatus(status);
+        return ResponseEntity.ok(packageList);
+    }
+
+//    @GetMapping("{packId}")
     public ResponseEntity<?> getPackage(@PathVariable int packId) {
         Optional<Package> pack = packageRepository.findById(packId);
         if (pack.isEmpty())
@@ -119,6 +125,7 @@ public class DocumentController {
         pack.setSenderUser(userEmployee.get());
         pack.setDraft(false);
         pack.setPackageStatus(DocumentStatus.NOT_SIGNED);
+        pack.setCreateAt(LocalDateTime.now());
 
         for (MultipartFile item : file) {
             String nameFile = StringUtils.cleanPath(item.getOriginalFilename());
@@ -179,10 +186,16 @@ public class DocumentController {
     }
 
 
-    @DeleteMapping("{packId}")
-    public ResponseEntity<MessageResponse> deletePackage(@PathVariable int packId) {
-        packageRepository.deleteById(packId);
-        return ResponseEntity.ok(new MessageResponse("Package delete"));
+    @DeleteMapping("delete")
+    public ResponseEntity<MessageResponse> deletePackage(@RequestParam(value = "document_id", required = false) Integer docId,
+                                                         @RequestParam(value = "package_id", required = false) Integer packId) {
+        if (docId != null) {
+            documentService.deleteById(docId);
+            return ResponseEntity.ok(new MessageResponse("Document " + docId + " deleted"));
+        } else if (packId != null) {
+            packageRepository.deleteById(packId);
+            return ResponseEntity.ok(new MessageResponse("Package " + packId + " deleted"));
+        } else return new ResponseEntity<>(new MessageResponse("Enter id doc or id pack"), HttpStatus.BAD_REQUEST);
     }
 
 //    @Operation(summary = "Получение всех пакетов", description = "Документ передается в байтах")
