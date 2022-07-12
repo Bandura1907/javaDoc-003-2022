@@ -1,10 +1,7 @@
 package com.example.javadoc0032022.models;
 
 import com.example.javadoc0032022.models.enums.DocumentStatus;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Getter
 @Setter
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Document {
 
     @Id
@@ -37,6 +34,7 @@ public class Document {
 
     @JsonProperty("package")
     @ManyToOne
+    @JsonBackReference
     private Package aPackage;
 
 ////    @JsonIgnore
