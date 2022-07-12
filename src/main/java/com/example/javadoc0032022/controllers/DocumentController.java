@@ -118,6 +118,7 @@ public class DocumentController {
         pack.setName(name);
         pack.setSenderUser(userEmployee.get());
         pack.setDraft(false);
+        pack.setPackageStatus(DocumentStatus.NOT_SIGNED);
 
         for (MultipartFile item : file) {
             String nameFile = StringUtils.cleanPath(item.getOriginalFilename());
@@ -144,6 +145,7 @@ public class DocumentController {
         if (user.isEmpty() || pack.isEmpty())
             return new ResponseEntity<>(new MessageResponse("User or package not found"), HttpStatus.NOT_FOUND);
 
+        pack.get().setPackageStatus(DocumentStatus.SEND_FOR_APPROVAL);
         pack.get().getDocuments().forEach(x -> x.setStatus(DocumentStatus.SEND_FOR_APPROVAL));
         pack.get().setReceiverUser(user.get());
         packageRepository.save(pack.get());
@@ -157,6 +159,7 @@ public class DocumentController {
         if (pack.isEmpty())
             return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
 
+        pack.get().setPackageStatus(DocumentStatus.REJECTED);
         pack.get().getDocuments().forEach(x -> x.setStatus(DocumentStatus.REJECTED));
         pack.get().setReceiverUser(null);
         packageRepository.save(pack.get());
@@ -375,33 +378,93 @@ public class DocumentController {
             @ApiResponse(responseCode = "200", description = "Статус изменен",
                     content = @Content(schema = @Schema(implementation = Document.class)))
     })
-    @PutMapping("/change_status/{idDocument}/{index}")
-    public ResponseEntity<?> changeStatusDocument(@Parameter(required = true, description = "Index") @PathVariable int index,
-                                                  @Parameter(required = true, description = "Document ID") @PathVariable int idDocument) {
-        Optional<Document> document = documentService.findById(idDocument);
-        if (document.isEmpty())
-            return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
+    @PutMapping("/change_status/{index}")
+    public ResponseEntity<?> changeStatusDocument(@Parameter(required = true, description = "Index") @PathVariable Integer index,
+                                                  @RequestParam(value = "package_id", required = false) Integer packId,
+                                                  @RequestParam(value = "document_id", required = false) Integer docId) {
 
-        switch (index) {
-            case 0:
-                documentService.agreed(document.get());
-                break;
-            case 1:
-                documentService.subscribe(document.get());
-                break;
-            case 2:
-                documentService.refuse(document.get());
-                break;
-            case 3:
-                documentService.reject(document.get());
-                break;
-            default:
-                return new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
+        if (docId != null && packId == null) {
+            Optional<Document> document = documentService.findById(docId);
+            if (document.isEmpty())
+                return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
+
+            switch (index) {
+                case 0:
+                    documentService.agreed(document.get());
+                    break;
+                case 1:
+                    documentService.subscribe(document.get());
+                    break;
+                case 2:
+                    documentService.refuse(document.get());
+                    break;
+                case 3:
+                    documentService.reject(document.get());
+                    break;
+                default:
+                    return new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
+            }
+
+            return ResponseEntity.ok(document.get());
+        } else if (packId != null && docId == null) {
+            Optional<Package> pack = packageRepository.findById(packId);
+            if (pack.isEmpty())
+                return new ResponseEntity<>(new MessageResponse("Package not found"), HttpStatus.NOT_FOUND);
+
+            switch (index) {
+                case 0:
+                    pack.get().setPackageStatus(DocumentStatus.AGREED);
+                    break;
+                case 1:
+                    pack.get().setPackageStatus(DocumentStatus.SIGNED);
+                    break;
+                case 2:
+                    pack.get().setPackageStatus(DocumentStatus.DENIED);
+                    break;
+                case 3:
+                    pack.get().setPackageStatus(DocumentStatus.REJECTED);
+                    break;
+                default:
+                    return new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
+            }
+
+            return ResponseEntity.ok(packageRepository.save(pack.get()));
+        } else if (packId != null && docId != null) {
+            Optional<Document> document = documentService.findById(docId);
+            Optional<Package> pack = packageRepository.findById(packId);
+            if (document.isEmpty() || pack.isEmpty())
+                return new ResponseEntity<>(new MessageResponse("Doc or pack not found"), HttpStatus.NOT_FOUND);
+
+            switch (index) {
+                case 0:
+                    pack.get().setPackageStatus(DocumentStatus.AGREED);
+                    documentService.agreed(document.get());
+                    break;
+                case 1:
+                    pack.get().setPackageStatus(DocumentStatus.SIGNED);
+                    documentService.subscribe(document.get());
+                    break;
+                case 2:
+                    pack.get().setPackageStatus(DocumentStatus.DENIED);
+                    documentService.refuse(document.get());
+                    break;
+                case 3:
+                    pack.get().setPackageStatus(DocumentStatus.REJECTED);
+                    documentService.reject(document.get());
+                    break;
+                default:
+                    return new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
+            }
+
+            return ResponseEntity.ok(packageRepository.save(pack.get()));
+        } else {
+            return new ResponseEntity<>(new MessageResponse("Enter ids"), HttpStatus.BAD_REQUEST);
         }
-
-        return ResponseEntity.ok(document.get());
-    }
 //
+//        return ResponseEntity.ok(document.get());
+    }
+
+    //
 //    @Operation(summary = "Удаление документа")
 //    @DeleteMapping("{id}")
 //    public ResponseEntity<MessageResponse> deleteDocument(@Parameter(required = true, description = "Document ID")

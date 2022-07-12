@@ -1,5 +1,6 @@
 package com.example.javadoc0032022.models;
 
+import com.example.javadoc0032022.models.enums.DocumentStatus;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
@@ -26,6 +27,9 @@ public class Package {
     private String comment;
     private String name;
     private boolean draft;
+
+    @Enumerated(EnumType.STRING)
+    private DocumentStatus packageStatus;
 
     @OneToMany(mappedBy = "aPackage", cascade = CascadeType.ALL)
     private List<Document> documents;
