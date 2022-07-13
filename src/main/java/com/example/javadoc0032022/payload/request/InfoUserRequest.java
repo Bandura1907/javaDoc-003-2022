@@ -13,7 +13,7 @@ public class InfoUserRequest {
     private String login;
 
     @Schema(description = "Роли", example = "[\"admin\", \"employee\", \"user\"]")
-    private Set<String> roles;
+    private Set<String> role;
 
     @Schema(description = "Имя юзера", example = "Ivan")
     private String name;

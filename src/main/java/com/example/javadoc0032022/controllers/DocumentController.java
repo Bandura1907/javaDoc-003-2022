@@ -6,6 +6,7 @@ import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.models.enums.DocumentStatus;
 import com.example.javadoc0032022.models.enums.ERole;
+import com.example.javadoc0032022.payload.response.DocumentFilterResponse;
 import com.example.javadoc0032022.payload.response.MessageResponse;
 import com.example.javadoc0032022.repository.PackageRepository;
 import com.example.javadoc0032022.repository.RoleRepository;
@@ -28,10 +29,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -55,14 +54,45 @@ public class DocumentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Package>> getDocuments() {
+    public ResponseEntity<List<Package>> getDocuments(@RequestParam(value = "revers", required = false, defaultValue = "false") boolean revers) {
+        if (revers) {
+            List<Package> packages = packageRepository.findAll();
+            Collections.reverse(packages);
+            return ResponseEntity.ok(packages);
+        }
+
         return ResponseEntity.ok(packageRepository.findAll());
+    }
+
+    @GetMapping("/get_awaiting_signing")
+    public ResponseEntity<List<Document>> getDocsAwaitingSigning() {
+        List<Document> documents = documentService.findAll().stream()
+                .filter(x -> x.getStatus().equals(DocumentStatus.SENT_FOR_SIGNATURE))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(documents);
     }
 
     @GetMapping("status/{status}")
     public ResponseEntity<?> documentStatusList(@PathVariable DocumentStatus status) {
         List<Package> packageList = packageRepository.findAllByPackageStatus(status);
         return ResponseEntity.ok(packageList);
+    }
+
+    @GetMapping("/filters")
+    public ResponseEntity<?> getFilters() {
+        List<Package> packages = packageRepository.findAll();
+        List<DocumentFilterResponse> documentFilterResponses = new ArrayList<>();
+
+        int countInput = (int) packages.stream().map(Package::getReceiverUser).filter(Objects::nonNull).count();
+        int countOutput = (int) packages.stream().map(Package::getSenderUser).filter(Objects::nonNull).count();
+        int countDraft = (int) packages.stream().map(Package::isDraft).filter(x -> x.equals(true)).count();
+
+        documentFilterResponses.add(new DocumentFilterResponse("input", countInput));
+        documentFilterResponses.add(new DocumentFilterResponse("output", countOutput));
+        documentFilterResponses.add(new DocumentFilterResponse("blackwork", countDraft));
+
+        return ResponseEntity.ok(documentFilterResponses);
     }
 
     @GetMapping("{packId}")
@@ -185,6 +215,25 @@ public class DocumentController {
         return ResponseEntity.ok(new MessageResponse("documents save to draft"));
     }
 
+    @PutMapping("/add/{packId}")
+    public ResponseEntity<?> addDocument(@PathVariable int packId,
+                                         @RequestParam("file") MultipartFile[] files) throws IOException {
+        Optional<Package> pack = packageRepository.findById(packId);
+        if (pack.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("Package not found"), HttpStatus.NOT_FOUND);
+
+        for (MultipartFile file : files) {
+            Document document = new Document();
+            document.setName(StringUtils.cleanPath(file.getOriginalFilename()));
+            document.setStatus(DocumentStatus.NOT_SIGNED);
+            document.setCreateAt(LocalDateTime.now());
+            document.setFile(file.getBytes());
+            document.setAPackage(pack.get());
+            documentService.save(document);
+        }
+
+        return ResponseEntity.ok(pack.get());
+    }
 
     @DeleteMapping("delete")
     public ResponseEntity<MessageResponse> deletePackage(@RequestParam(value = "document_id", required = false) Integer docId,

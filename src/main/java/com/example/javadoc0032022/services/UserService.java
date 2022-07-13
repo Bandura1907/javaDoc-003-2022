@@ -139,7 +139,7 @@ public class UserService {
 
     public User changeInfoUser(int id, InfoUserRequest infoUserRequest) throws Exception {
         User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
-        Set<Role> roleSet = addRoles(infoUserRequest.getRoles());
+        Set<Role> roleSet = addRoles(infoUserRequest.getRole());
 
         if (!userRepository.existsByLogin(infoUserRequest.getLogin())) {
             user.setLogin(infoUserRequest.getLogin() == null ? user.getLogin() : infoUserRequest.getLogin());
@@ -150,7 +150,7 @@ public class UserService {
         user.setSurName(infoUserRequest.getSurName() == null ? user.getSurName() : infoUserRequest.getSurName());
         user.setEmail(infoUserRequest.getEmail() == null ? user.getEmail() : infoUserRequest.getEmail());
         user.setPhoneNumber(infoUserRequest.getPhoneNumber() == null ? user.getPhoneNumber() : infoUserRequest.getPhoneNumber());
-        user.setRoles(infoUserRequest.getRoles() == null ? user.getRoles() : roleSet);
+        user.setRoles(infoUserRequest.getRole() == null ? user.getRoles() : roleSet);
 
         user.setNameOrganization(infoUserRequest.getNameOrganization() == null ? user.getNameOrganization() :
                 infoUserRequest.getNameOrganization());
@@ -169,15 +169,16 @@ public class UserService {
 
     public String blockUser(int id) {
         User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
-        if (user.isNonBlocked()) {
             user.setNonBlocked(false);
             userRepository.save(user);
             return "User " + id + " blocked";
-        } else {
-            user.setNonBlocked(true);
-            userRepository.save(user);
-            return "User " + id + " unlock";
-        }
+    }
+
+    public String unlockUser(int id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
+        user.setNonBlocked(true);
+        userRepository.save(user);
+        return "User " + id + " unlock";
     }
 
     public String confirmToken(String token) {

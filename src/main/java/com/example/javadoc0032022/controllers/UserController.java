@@ -133,6 +133,12 @@ public class UserController {
         return ResponseEntity.ok(new MessageResponse(userService.blockUser(id)));
     }
 
+    @PutMapping("/unlock/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<MessageResponse> unlockUser(@PathVariable int id) {
+        return ResponseEntity.ok(new MessageResponse(userService.unlockUser(id)));
+    }
+
     @Operation(summary = "Метод изменения пароля", description = "Для изменеия пароля нужно сначала ввести старый а потом новый." +
             " Минимальная длина пароля 12")
     @ApiResponses(value = {
