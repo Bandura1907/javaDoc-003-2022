@@ -1,26 +1,23 @@
 package com.example.javadoc0032022.models;
 
-import com.example.javadoc0032022.models.enums.ERole;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
 @Entity
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
-public class Role {
+public class Directory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
-    @Enumerated(EnumType.STRING)
-    private ERole role;
-
-    public Role(ERole role) {
-        this.role = role;
-    }
 }

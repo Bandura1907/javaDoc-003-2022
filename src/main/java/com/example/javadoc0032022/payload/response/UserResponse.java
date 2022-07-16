@@ -24,21 +24,23 @@ public class UserResponse {
     private String name;
     private String lastName;
     private String surName;
-
     private String email;
     private String phoneNumber;
-    private int countDocuments;
 
-    private boolean existEcp;
+    private String nameOrganization;
+    private String mainStateRegistrationNumber;
+    private String identificationNumber;
+    private String position;
+    private String subdivision;
 
-    private boolean isTimeLocked;
-    private boolean isPasswordExpired;
-
-    private boolean isNonBlocked;
-    private int loginAttempts;
-    private long blockTime;
-    private boolean enabled;
-    private boolean firstLogin;
+//    private boolean isTimeLocked;
+//    private boolean isPasswordExpired;
+//
+//    private boolean isNonBlocked;
+//    private int loginAttempts;
+//    private long blockTime;
+//    private boolean enabled;
+//    private boolean firstLogin;
 
 
 }

@@ -1,6 +1,6 @@
 package com.example.javadoc0032022;
 
-import com.example.javadoc0032022.models.ERole;
+import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.repository.RoleRepository;
 import org.springframework.boot.CommandLineRunner;

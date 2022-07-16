@@ -20,6 +20,13 @@ public class JwtResponse {
     private String surName;
     private String email;
     private String phoneNumber;
+
+    private String nameOrganization;
+    private String mainStateRegistrationNumber;
+    private String identificationNumber;
+    private String position;
+    private String subdivision;
+
     private boolean isNonBlocked;
     private boolean firstLogin;
 

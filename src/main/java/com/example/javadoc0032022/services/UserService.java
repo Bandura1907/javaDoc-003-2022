@@ -1,8 +1,8 @@
 package com.example.javadoc0032022.services;
 
-import com.example.javadoc0032022.models.ERole;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
+import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.models.token.ConfirmationToken;
 import com.example.javadoc0032022.models.token.ResetToken;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
@@ -14,7 +14,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -36,6 +35,7 @@ public class UserService {
     private ResetTokenRepository resetTokenRepository;
     private TemplateEngine templateEngine;
 
+
     public boolean existsByLogin(String login) {
         return userRepository.existsByLogin(login);
     }
@@ -52,11 +52,13 @@ public class UserService {
         return userRepository.findAll();
     }
 
+
     public Optional<User> findById(int id) {
         return userRepository.findById(id);
     }
 
     public UserResponse findByIdUserResponse(int id) {
+        UserResponse userResponse = new UserResponse();
         Optional<User> user = userRepository.findById(id);
         Set<String> roles = new HashSet<>();
         if (user.isPresent()) {
@@ -73,17 +75,31 @@ public class UserService {
                         break;
                 }
             }
-            return new UserResponse(user.get().getId(), user.get().getLogin(), user.get().getPassword(), roles, user.get().getName(),
-                    user.get().getLastName(), user.get().getSurName(), user.get().getEmail(), user.get().getPhoneNumber(),
-                    user.get().getCountDocuments(), user.get().isExistEcp(), user.get().isTimeLocked(), user.get().isPasswordExpired(),
-                    user.get().isNonBlocked(), user.get().getLoginAttempts(), user.get().getBlockTime(),
-                    user.get().isEnabled(), user.get().isFirstLogin());
+            userResponse.setId(user.get().getId());
+            userResponse.setLogin(user.get().getLogin());
+            userResponse.setRoles(roles);
+            userResponse.setName(user.get().getName());
+            userResponse.setLastName(user.get().getLastName());
+            userResponse.setSurName(user.get().getSurName());
+            userResponse.setEmail(user.get().getEmail());
+            userResponse.setPhoneNumber(user.get().getPhoneNumber());
+            userResponse.setNameOrganization(user.get().getNameOrganization());
+            userResponse.setMainStateRegistrationNumber(user.get().getMainStateRegistrationNumber());
+            userResponse.setIdentificationNumber(user.get().getIdentificationNumber());
+            userResponse.setPosition(user.get().getPosition());
+            userResponse.setSubdivision(user.get().getSubdivision());
+
+            return userResponse;
         } else return new UserResponse();
 
     }
 
     public Optional<User> findByLogin(String login) {
         return userRepository.findByLogin(login);
+    }
+
+    public void deleteById(int id) {
+        userRepository.deleteById(id);
     }
 
     public Set<Role> addRoles(Set<String> strRoles) {
@@ -124,7 +140,7 @@ public class UserService {
 
     public User changeInfoUser(int id, InfoUserRequest infoUserRequest) throws Exception {
         User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
-        Set<Role> roleSet = addRoles(infoUserRequest.getRoles());
+        Set<Role> roleSet = addRoles(infoUserRequest.getRole());
 
         if (!userRepository.existsByLogin(infoUserRequest.getLogin())) {
             user.setLogin(infoUserRequest.getLogin() == null ? user.getLogin() : infoUserRequest.getLogin());
@@ -135,11 +151,18 @@ public class UserService {
         user.setSurName(infoUserRequest.getSurName() == null ? user.getSurName() : infoUserRequest.getSurName());
         user.setEmail(infoUserRequest.getEmail() == null ? user.getEmail() : infoUserRequest.getEmail());
         user.setPhoneNumber(infoUserRequest.getPhoneNumber() == null ? user.getPhoneNumber() : infoUserRequest.getPhoneNumber());
-        user.setRoles(infoUserRequest.getRoles() == null ? user.getRoles() : roleSet);
-        user.setCountDocuments(infoUserRequest.getCountDocuments() == null ? user.getCountDocuments() : infoUserRequest.getCountDocuments());
+        user.setRoles(infoUserRequest.getRole() == null ? user.getRoles() : roleSet);
+
+        user.setNameOrganization(infoUserRequest.getNameOrganization() == null ? user.getNameOrganization() :
+                infoUserRequest.getNameOrganization());
+        user.setMainStateRegistrationNumber(infoUserRequest.getMainStateRegistrationNumber() == null ? user.getMainStateRegistrationNumber() :
+                infoUserRequest.getMainStateRegistrationNumber());
+        user.setSubdivision(infoUserRequest.getSubdivision() == null ? user.getSubdivision() : infoUserRequest.getSubdivision());
+        user.setPosition(infoUserRequest.getPosition() == null ? user.getPosition() : infoUserRequest.getPosition());
+        user.setIdentificationNumber(infoUserRequest.getIdentificationNumber() == null ? user.getIdentificationNumber() :
+                infoUserRequest.getIdentificationNumber());
+
         user.setFirstLogin(infoUserRequest.isFirstLogin() || user.isFirstLogin());
-//        user.setExistEcp(infoUserRequest.isExistEcp() || user.isExistEcp());
-//        user.setPasswordExpired(infoUserRequest.isPasswordExpired() || user.isPasswordExpired());
 
         userRepository.save(user);
         return user;
@@ -147,15 +170,16 @@ public class UserService {
 
     public String blockUser(int id) {
         User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
-        if (user.isNonBlocked()) {
             user.setNonBlocked(false);
             userRepository.save(user);
             return "User " + id + " blocked";
-        } else {
-            user.setNonBlocked(true);
-            userRepository.save(user);
-            return "User " + id + " unlock";
-        }
+    }
+
+    public String unlockUser(int id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
+        user.setNonBlocked(true);
+        userRepository.save(user);
+        return "User " + id + " unlock";
     }
 
     public String confirmToken(String token) {
@@ -220,10 +244,7 @@ public class UserService {
     }
 
     private String generateToken() {
-        String token = UUID.randomUUID().toString() +
-                UUID.randomUUID().toString();
-
-        return token;
+        return UUID.randomUUID() + UUID.randomUUID().toString();
     }
 
     private boolean isTokenExpired(final LocalDateTime tokenCreationDate) {
@@ -251,4 +272,6 @@ public class UserService {
         context.setVariable("link", link);
         return templateEngine.process("reset-password-email", context);
     }
+
+
 }

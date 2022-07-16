@@ -2,11 +2,13 @@ package com.example.javadoc0032022.controllers;
 
 import com.example.javadoc0032022.email.EmailSender;
 import com.example.javadoc0032022.models.User;
+import com.example.javadoc0032022.models.token.ConfirmationToken;
 import com.example.javadoc0032022.payload.request.ChangePasswordRequest;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
 import com.example.javadoc0032022.payload.request.ResetPasswordRequest;
 import com.example.javadoc0032022.payload.response.MessageResponse;
 import com.example.javadoc0032022.payload.response.UserResponse;
+import com.example.javadoc0032022.services.ConfirmationTokenService;
 import com.example.javadoc0032022.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,7 +17,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,18 +26,30 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/user")
-@AllArgsConstructor
 @Tag(name = "UserController", description = "Контролер управления юзерами (Методы доступны только после авторизации)")
 public class UserController {
 
-    private UserService userService;
-    private EmailSender emailSender;
-    private PasswordEncoder encoder;
+    @Value("${doc.app.confirmation.token.link}")
+    private String confirmationTokenLink;
+    private final UserService userService;
+    private final EmailSender emailSender;
+    private final PasswordEncoder encoder;
+    private final ConfirmationTokenService confirmationTokenService;
+
+    @Autowired
+    public UserController(UserService userService, EmailSender emailSender, PasswordEncoder encoder, ConfirmationTokenService confirmationTokenService) {
+        this.userService = userService;
+        this.emailSender = emailSender;
+        this.encoder = encoder;
+        this.confirmationTokenService = confirmationTokenService;
+    }
 
     @Operation(summary = "Метод получения всех юзеров")
     @ApiResponse(responseCode = "200", description = "Получены все юзеры")
@@ -44,10 +59,36 @@ public class UserController {
     }
 
     @Operation(summary = "Метод получения юзера по id")
-    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UserResponse.class)))
+    @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = User.class)))
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUser(@Parameter(description = "ID user", required = true) @PathVariable int id) {
-        return ResponseEntity.ok(userService.findByIdUserResponse(id));
+    public ResponseEntity<?> getUser(@Parameter(description = "ID user", required = true) @PathVariable int id) {
+//        Optional<User> user = userService.findById(id);
+//        if (user.isEmpty())
+//            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
+        UserResponse userResponse = userService.findByIdUserResponse(id);
+
+        return ResponseEntity.ok(userResponse);
+    }
+
+    @PostMapping("/send_confirmation_token/{userId}")
+    public ResponseEntity<MessageResponse> sendConfirmationToken(@PathVariable int userId) {
+        String token = UUID.randomUUID().toString();
+        Optional<User> user = userService.findById(userId);
+
+        if (user.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("user not found"), HttpStatus.NOT_FOUND);
+
+        ConfirmationToken confirmationToken = new ConfirmationToken(token,
+                LocalDateTime.now(),
+                LocalDateTime.now().plusMinutes(15),
+                user.get());
+
+        confirmationTokenService.saveConfirmationToken(confirmationToken);
+        emailSender.send(user.get().getEmail(), userService.buildActivationEmail(
+                user.get().getName() + " " + user.get().getLastName(),
+                confirmationTokenLink + token
+        ));
+        return ResponseEntity.ok(new MessageResponse("Confirmation token send"));
     }
 
     @Operation(summary = "Метод для востановления пароля")
@@ -56,7 +97,8 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Email not found")
     })
     @PostMapping("/forgot_password")
-    public ResponseEntity<MessageResponse> forgotPassword(@Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)@RequestParam String email) {
+    public ResponseEntity<MessageResponse> forgotPassword(@Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)
+                                                          @RequestParam String email) {
         String response = userService.forgotPassword(email);
 
         if (!response.startsWith("Invalid")) {
@@ -68,8 +110,10 @@ public class UserController {
 
     @Operation(summary = "Метод для сброса пароля")
     @PutMapping("/reset_password")
-    public ResponseEntity<MessageResponse> resetPassword(@Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)@RequestParam String token,
-                                                         @Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)@RequestParam String password) {
+    public ResponseEntity<MessageResponse> resetPassword(@Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)
+                                                         @RequestParam String token,
+                                                         @Parameter(description = "Можно передать в параметр или впихнуть в FormData", required = true)
+                                                         @RequestParam String password) {
 
         return ResponseEntity.ok(new MessageResponse(userService.resetPassword(token, password)));
     }
@@ -89,6 +133,12 @@ public class UserController {
         return ResponseEntity.ok(new MessageResponse(userService.blockUser(id)));
     }
 
+    @PutMapping("/unlock/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<MessageResponse> unlockUser(@PathVariable int id) {
+        return ResponseEntity.ok(new MessageResponse(userService.unlockUser(id)));
+    }
+
     @Operation(summary = "Метод изменения пароля", description = "Для изменеия пароля нужно сначала ввести старый а потом новый." +
             " Минимальная длина пароля 12")
     @ApiResponses(value = {
@@ -99,7 +149,8 @@ public class UserController {
     })
     @PutMapping("/change_password/{id}")
     public ResponseEntity<MessageResponse> changePassword(@Parameter(description = "id user", required = true) @PathVariable int id,
-                                                          @Parameter(description = "Минимальная длина 12", required = true) @RequestBody @Valid ChangePasswordRequest changePasswordRequest) {
+                                                          @Parameter(description = "Минимальная длина 12", required = true)
+                                                          @RequestBody @Valid ChangePasswordRequest changePasswordRequest) {
         try {
             String result = userService
                     .changePassword(id, changePasswordRequest.getOldPassword(), changePasswordRequest.getNewPassword());
@@ -118,7 +169,8 @@ public class UserController {
     })
     @PutMapping("/change_info/{id}")
     public ResponseEntity<?> changeUserInfo(@Parameter(description = "id user", required = true) @PathVariable int id,
-                                            @Parameter(description = "Можно менять одно или несколько полей", required = true) @Valid @RequestBody InfoUserRequest infoUserRequest) {
+                                            @Parameter(description = "Можно менять одно или несколько полей", required = true)
+                                            @Valid @RequestBody InfoUserRequest infoUserRequest) {
         try {
             User user = userService.changeInfoUser(id, infoUserRequest);
             return ResponseEntity.ok(user);
@@ -135,7 +187,8 @@ public class UserController {
     })
     @PutMapping("/first_login_password_change/{id}")
     public ResponseEntity<MessageResponse> firstLoginPasswordChange(@Parameter(required = true, description = "User ID") @PathVariable int id,
-                                                                    @Parameter(description = "ResetPasswordRequest", required = true) @RequestBody ResetPasswordRequest request) {
+                                                                    @Parameter(description = "ResetPasswordRequest", required = true)
+                                                                    @RequestBody ResetPasswordRequest request) {
         Optional<User> user = userService.findById(id);
         if (user.isEmpty())
             return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
@@ -144,5 +197,11 @@ public class UserController {
         user.get().setFirstLogin(false);
         userService.save(user.get());
         return ResponseEntity.ok(new MessageResponse("Password changed"));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<MessageResponse> deleteUser(@PathVariable int id) {
+        userService.deleteById(id);
+        return ResponseEntity.ok(new MessageResponse("User id: " + id + " deleted"));
     }
 }
