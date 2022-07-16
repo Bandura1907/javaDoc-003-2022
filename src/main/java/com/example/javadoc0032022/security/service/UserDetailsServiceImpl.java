@@ -2,7 +2,9 @@ package com.example.javadoc0032022.security.service;
 
 import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.repository.UserRepository;
+import com.example.javadoc0032022.services.UserService;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,6 +30,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (user.isEmpty()) {
             throw new UsernameNotFoundException("User not found");
         }
+
 
         return user.get();
     }

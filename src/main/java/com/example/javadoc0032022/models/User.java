@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
         "isTimeLocked", "isPasswordExpired", "loginAttempts", "blockTime", "isNonBlocked", "confirmationTokenList",
         "refreshToken", "packageSenderList", "packageReceiverList", "resetToken", "isTimeLocked"
 })
-public class User  implements UserDetails{
+public class User implements UserDetails{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,7 +39,7 @@ public class User  implements UserDetails{
     @JsonIgnore
     private String password;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
@@ -82,10 +82,10 @@ public class User  implements UserDetails{
     @OneToMany(mappedBy = "receiverUser", cascade = CascadeType.ALL)
     private List<Package> packageReceiverList;
 
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority(role.getRole().name()))
+        return roles.stream().map(role -> new SimpleGrantedAuthority(role.getRole().name()))
                 .collect(Collectors.toList());
     }
 
