@@ -1,6 +1,7 @@
 package com.example.javadoc0032022.security.jwt;
 
 import com.example.javadoc0032022.security.service.UserDetailsServiceImpl;
+import com.example.javadoc0032022.services.UserService;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

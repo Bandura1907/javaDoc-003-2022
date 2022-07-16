@@ -14,7 +14,7 @@
     <name>javaDoc-003-2022</name>
     <description>javaDoc-003-2022</description>
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
     </properties>
     <dependencies>
         <dependency>
