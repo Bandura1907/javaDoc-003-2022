@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -142,17 +143,14 @@ public class DocumentController {
     @PostMapping("/create")
     public ResponseEntity<?> createDocument(@RequestParam("file") MultipartFile[] file,
                                             @RequestParam("comment") String comment,
-                                            @RequestParam("name") String name) throws IOException {
-        Optional<User> userEmployee = userService.findByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
-        if (userEmployee.isEmpty())
-            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
-
+                                            @RequestParam("name") String name,
+                                            @AuthenticationPrincipal User user) throws IOException {
         Package pack = new Package();
         List<Document> documents = new ArrayList<>();
 
         pack.setComment(comment);
         pack.setName(name);
-        pack.setSenderUser(userEmployee.get());
+        pack.setSenderUser(user);
         pack.setDraft(false);
         pack.setPackageStatus(DocumentStatus.NOT_SIGNED);
         pack.setCreateAt(LocalDateTime.now());

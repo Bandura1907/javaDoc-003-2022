@@ -1,8 +1,8 @@
 package com.example.javadoc0032022.services;
 
-import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
+import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.models.token.ConfirmationToken;
 import com.example.javadoc0032022.models.token.ResetToken;
 import com.example.javadoc0032022.payload.request.InfoUserRequest;
@@ -34,6 +34,7 @@ public class UserService {
     private ConfirmationTokenService confirmationTokenService;
     private ResetTokenRepository resetTokenRepository;
     private TemplateEngine templateEngine;
+
 
     public boolean existsByLogin(String login) {
         return userRepository.existsByLogin(login);
@@ -271,4 +272,6 @@ public class UserService {
         context.setVariable("link", link);
         return templateEngine.process("reset-password-email", context);
     }
+
+
 }

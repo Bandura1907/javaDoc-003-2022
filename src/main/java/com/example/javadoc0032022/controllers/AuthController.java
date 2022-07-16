@@ -16,7 +16,6 @@ import com.example.javadoc0032022.payload.response.TokenRefreshResponse;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.security.jwt.JwtUtils;
 import com.example.javadoc0032022.security.service.RefreshTokenService;
-import com.example.javadoc0032022.security.service.UserDetailsImpl;
 import com.example.javadoc0032022.services.ConfirmationTokenService;
 import com.example.javadoc0032022.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,10 +31,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.crypto.password.StandardPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -239,9 +236,9 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
 
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
+        User userDetails = (User) authentication.getPrincipal();
+        List<String> roles = userDetails.getRoles().stream()
+                .map(x -> x.getRole().name())
                 .collect(Collectors.toList());
 
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
