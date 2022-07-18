@@ -14,6 +14,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @SpringBootApplication
 @EnableAsync
 public class JavaDoc0032022Application {
@@ -36,12 +39,16 @@ public class JavaDoc0032022Application {
                 roleRepository.save(new Role(ERole.ROLE_EMPLOYEE));
 
             if (!userRepository.existsByEmail("adm")) {
+                Set<Role> roleSet = new HashSet<>();
+                roleSet.add(roleRepository.findByRole(ERole.ROLE_ADMIN).get());
                 User user = new User();
                 user.setLogin("adm");
                 user.setPassword(encoder.encode("adm12"));
                 user.setEmail("admin@mail.com");
+                user.setRoles(roleSet);
                 user.setEnabled(true);
                 user.setNonBlocked(true);
+
                 userRepository.save(user);
             }
         };
