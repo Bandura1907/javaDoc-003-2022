@@ -1,13 +1,16 @@
 package com.example.javadoc0032022;
 
+import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.repository.RoleRepository;
+import com.example.javadoc0032022.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -20,7 +23,7 @@ public class JavaDoc0032022Application {
     }
 
     @Bean
-    CommandLineRunner init(RoleRepository roleRepository) {
+    CommandLineRunner init(RoleRepository roleRepository, UserRepository userRepository, PasswordEncoder encoder) {
         return args -> {
             if (roleRepository.findByRole(ERole.ROLE_ADMIN).isEmpty()) {
                 roleRepository.save(new Role(ERole.ROLE_ADMIN));
@@ -31,6 +34,16 @@ public class JavaDoc0032022Application {
 
             if (roleRepository.findByRole(ERole.ROLE_EMPLOYEE).isEmpty())
                 roleRepository.save(new Role(ERole.ROLE_EMPLOYEE));
+
+            if (!userRepository.existsByEmail("adm")) {
+                User user = new User();
+                user.setLogin("adm");
+                user.setPassword(encoder.encode("adm12"));
+                user.setEmail("admin@mail.com");
+                user.setEnabled(true);
+                user.setNonBlocked(true);
+                userRepository.save(user);
+            }
         };
     }
 
