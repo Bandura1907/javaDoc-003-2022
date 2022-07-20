@@ -38,7 +38,7 @@ public class JavaDoc0032022Application {
             if (roleRepository.findByRole(ERole.ROLE_EMPLOYEE).isEmpty())
                 roleRepository.save(new Role(ERole.ROLE_EMPLOYEE));
 
-            if (!userRepository.existsByEmail("adm")) {
+            if (!userRepository.existsByLogin("adm")) {
                 Set<Role> roleSet = new HashSet<>();
                 roleSet.add(roleRepository.findByRole(ERole.ROLE_ADMIN).get());
                 User user = new User();

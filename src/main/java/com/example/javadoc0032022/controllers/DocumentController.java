@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -40,8 +39,8 @@ import java.util.zip.ZipOutputStream;
 public class DocumentController {
 
     //    private static final String NEW_DOC_FILE = "src/main/resources/static/documents/docECP.docx";
-    @Value("${documents.files}")
-    private String docPath;
+//    @Value("${documents.files}")
+//    private String docPath;
     private final DocumentService documentService;
     private final UserService userService;
     private final RoleRepository roleRepository;
@@ -142,7 +141,7 @@ public class DocumentController {
 
     @PostMapping("/create")
     public ResponseEntity<?> createDocument(@RequestParam("file") MultipartFile[] file,
-                                            @RequestParam("comment") String comment,
+                                            @RequestParam(value = "comment", required = false) String comment,
                                             @RequestParam("name") String name,
                                             @AuthenticationPrincipal User user) throws IOException {
         Package pack = new Package();
