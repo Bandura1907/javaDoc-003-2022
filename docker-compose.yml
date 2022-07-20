@@ -7,7 +7,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=147258369aA!
     ports:
-      - "3306:3306"
+      - "3307:3306"
     restart: always
     volumes:
       - ./db:/var/lib/mysql
@@ -48,7 +48,7 @@ services:
       - db
       - maildev
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/java_doc?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3307/java_doc?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 147258369aA!
 
