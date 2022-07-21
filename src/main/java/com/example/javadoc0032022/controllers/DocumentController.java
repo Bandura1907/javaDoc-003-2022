@@ -8,9 +8,9 @@ import com.example.javadoc0032022.models.enums.DocumentStatus;
 import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.payload.response.DocumentFilterResponse;
 import com.example.javadoc0032022.payload.response.MessageResponse;
-import com.example.javadoc0032022.repository.PackageRepository;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.services.DocumentService;
+import com.example.javadoc0032022.services.PackageService;
 import com.example.javadoc0032022.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,27 +44,27 @@ public class DocumentController {
     private final DocumentService documentService;
     private final UserService userService;
     private final RoleRepository roleRepository;
-    private final PackageRepository packageRepository;
+    private final PackageService packageService;
 
-    public DocumentController(DocumentService documentService, UserService userService, RoleRepository roleRepository, PackageRepository packageRepository) {
+    public DocumentController(DocumentService documentService, UserService userService, RoleRepository roleRepository, PackageService packageService) {
         this.documentService = documentService;
         this.userService = userService;
         this.roleRepository = roleRepository;
-        this.packageRepository = packageRepository;
+        this.packageService = packageService;
     }
 
     @GetMapping
     public ResponseEntity<List<Package>> getDocuments(@RequestParam(value = "revers", required = false, defaultValue = "false") boolean revers) {
         if (revers) {
-            List<Package> packages = packageRepository.findAll();
+            List<Package> packages = packageService.findAll();
             Collections.reverse(packages);
             return ResponseEntity.ok(packages);
         }
 
-        return ResponseEntity.ok(packageRepository.findAll());
+        return ResponseEntity.ok(packageService.findAll());
     }
 
-    @GetMapping("/get_awaiting_signing")
+    @GetMapping("/get_last_unsigned")
     public ResponseEntity<List<Document>> getDocsAwaitingSigning() {
         List<Document> documents = documentService.findAll().stream()
                 .filter(x -> x.getStatus().equals(DocumentStatus.SENT_FOR_SIGNATURE))
@@ -75,13 +75,13 @@ public class DocumentController {
 
     @GetMapping("status/{status}")
     public ResponseEntity<?> documentStatusList(@PathVariable DocumentStatus status) {
-        List<Package> packageList = packageRepository.findAllByPackageStatus(status);
+        List<Package> packageList = packageService.findAllByPackageStatus(status);
         return ResponseEntity.ok(packageList);
     }
 
     @GetMapping("/filters")
     public ResponseEntity<?> getFilters() {
-        List<Package> packages = packageRepository.findAll();
+        List<Package> packages = packageService.findAll();
         List<DocumentFilterResponse> documentFilterResponses = new ArrayList<>();
 
         int countInput = (int) packages.stream().map(Package::getReceiverUser).filter(Objects::nonNull).count();
@@ -97,7 +97,7 @@ public class DocumentController {
 
     @GetMapping("{packId}")
     public ResponseEntity<?> getPackage(@PathVariable int packId) {
-        Optional<Package> pack = packageRepository.findById(packId);
+        Optional<Package> pack = packageService.findById(packId);
         if (pack.isEmpty())
             return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
 
@@ -116,7 +116,7 @@ public class DocumentController {
         ZipOutputStream zipOut = new ZipOutputStream(bo);
 
         if (packId != null) {
-            Optional<Package> pack = packageRepository.findById(packId);
+            Optional<Package> pack = packageService.findById(packId);
             if (pack.isEmpty())
                 return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
 
@@ -167,7 +167,7 @@ public class DocumentController {
         }
 
         pack.setDocuments(documents);
-        Package savePack = packageRepository.save(pack);
+        Package savePack = packageService.save(pack);
 
         return ResponseEntity.ok(Map.of("packageId", savePack.getId()));
     }
@@ -175,47 +175,47 @@ public class DocumentController {
     @PutMapping("/send/{packId}/{userId}")
     public ResponseEntity<?> sendDocument(@PathVariable int packId, @PathVariable int userId) {
         Optional<User> user = userService.findById(userId);
-        Optional<Package> pack = packageRepository.findById(packId);
+        Optional<Package> pack = packageService.findById(packId);
         if (user.isEmpty() || pack.isEmpty())
             return new ResponseEntity<>(new MessageResponse("User or package not found"), HttpStatus.NOT_FOUND);
 
         pack.get().setPackageStatus(DocumentStatus.SEND_FOR_APPROVAL);
         pack.get().getDocuments().forEach(x -> x.setStatus(DocumentStatus.SEND_FOR_APPROVAL));
         pack.get().setReceiverUser(user.get());
-        packageRepository.save(pack.get());
+        packageService.save(pack.get());
 
         return ResponseEntity.ok(new MessageResponse("Send to user: " + user.get().getId()));
     }
 
     @PutMapping("/cancel/{packId}")
     public ResponseEntity<?> cancelDoc(@PathVariable int packId) {
-        Optional<Package> pack = packageRepository.findById(packId);
+        Optional<Package> pack = packageService.findById(packId);
         if (pack.isEmpty())
             return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
 
         pack.get().setPackageStatus(DocumentStatus.REJECTED);
         pack.get().getDocuments().forEach(x -> x.setStatus(DocumentStatus.REJECTED));
         pack.get().setReceiverUser(null);
-        packageRepository.save(pack.get());
+        packageService.save(pack.get());
 
         return ResponseEntity.ok(new MessageResponse("Document cancel"));
     }
 
     @PutMapping("/save_to_draft/{packId}")
     public ResponseEntity<?> saveToDraft(@PathVariable int packId) {
-        Optional<Package> pack = packageRepository.findById(packId);
+        Optional<Package> pack = packageService.findById(packId);
         if (pack.isEmpty())
             return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
 
         pack.get().setDraft(true);
-        packageRepository.save(pack.get());
+        packageService.save(pack.get());
         return ResponseEntity.ok(new MessageResponse("documents save to draft"));
     }
 
     @PutMapping("/add/{packId}")
     public ResponseEntity<?> addDocument(@PathVariable int packId,
                                          @RequestParam("file") MultipartFile[] files) throws IOException {
-        Optional<Package> pack = packageRepository.findById(packId);
+        Optional<Package> pack = packageService.findById(packId);
         if (pack.isEmpty())
             return new ResponseEntity<>(new MessageResponse("Package not found"), HttpStatus.NOT_FOUND);
 
@@ -239,7 +239,7 @@ public class DocumentController {
             documentService.deleteById(docId);
             return ResponseEntity.ok(new MessageResponse("Document " + docId + " deleted"));
         } else if (packId != null) {
-            packageRepository.deleteById(packId);
+            packageService.deleteById(packId);
             return ResponseEntity.ok(new MessageResponse("Package " + packId + " deleted"));
         } else return new ResponseEntity<>(new MessageResponse("Enter id doc or id pack"), HttpStatus.BAD_REQUEST);
     }
@@ -466,7 +466,7 @@ public class DocumentController {
 
             return ResponseEntity.ok(document.get());
         } else if (packId != null && docId == null) {
-            Optional<Package> pack = packageRepository.findById(packId);
+            Optional<Package> pack = packageService.findById(packId);
             if (pack.isEmpty())
                 return new ResponseEntity<>(new MessageResponse("Package not found"), HttpStatus.NOT_FOUND);
 
@@ -487,10 +487,10 @@ public class DocumentController {
                     return new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
             }
 
-            return ResponseEntity.ok(packageRepository.save(pack.get()));
+            return ResponseEntity.ok(packageService.save(pack.get()));
         } else if (packId != null && docId != null) {
             Optional<Document> document = documentService.findById(docId);
-            Optional<Package> pack = packageRepository.findById(packId);
+            Optional<Package> pack = packageService.findById(packId);
             if (document.isEmpty() || pack.isEmpty())
                 return new ResponseEntity<>(new MessageResponse("Doc or pack not found"), HttpStatus.NOT_FOUND);
 
@@ -515,7 +515,7 @@ public class DocumentController {
                     return new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
             }
 
-            return ResponseEntity.ok(packageRepository.save(pack.get()));
+            return ResponseEntity.ok(packageService.save(pack.get()));
         } else {
             return new ResponseEntity<>(new MessageResponse("Enter ids"), HttpStatus.BAD_REQUEST);
         }

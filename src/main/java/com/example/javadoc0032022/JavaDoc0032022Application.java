@@ -48,6 +48,14 @@ public class JavaDoc0032022Application {
                 user.setRoles(roleSet);
                 user.setEnabled(true);
                 user.setNonBlocked(true);
+                user.setNameOrganization("АО \"ОТП Банк\"");
+                user.setName("admin");
+                user.setLastName("admin");
+                user.setSurName("admin");
+                user.setIdentificationNumber("0000");
+                user.setMainStateRegistrationNumber("0000");
+                user.setSubdivision("admin");
+                user.setPosition("admin");
 
                 userRepository.save(user);
             }

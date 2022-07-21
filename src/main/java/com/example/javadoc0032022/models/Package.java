@@ -1,10 +1,7 @@
 package com.example.javadoc0032022.models;
 
 import com.example.javadoc0032022.models.enums.DocumentStatus;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,7 +32,7 @@ public class Package {
     private DocumentStatus packageStatus;
 
     @OneToMany(mappedBy = "aPackage", cascade = CascadeType.ALL)
-    @JsonManagedReference
+    @JsonIgnore
     private List<Document> documents;
 
 //    @JsonIdentityReference(alwaysAsId = true)
