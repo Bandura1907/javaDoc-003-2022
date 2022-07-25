@@ -33,7 +33,7 @@ public class Document {
     @JsonIgnore
     private byte[] file;
 
-    @JsonProperty("package")
+    @JsonIgnore
     @ManyToOne
     private Package aPackage;
 

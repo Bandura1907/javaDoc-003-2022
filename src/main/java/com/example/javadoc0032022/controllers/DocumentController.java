@@ -96,13 +96,13 @@ public class DocumentController {
         return ResponseEntity.ok(documentFilterResponses);
     }
 
-    @GetMapping("{dockId}")
-    public ResponseEntity<?> getPackage(@PathVariable int dockId) {
-        Optional<Document> document = documentService.findById(dockId);
-        if (document.isEmpty())
-            return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
+    @GetMapping("{packId}")
+    public ResponseEntity<?> getPackage(@PathVariable int packId) {
+        Optional<Package> pack = packageService.findById(packId);
+        if (pack.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("Package not found"), HttpStatus.NOT_FOUND);
 
-        return ResponseEntity.ok(document.get());
+        return ResponseEntity.ok(pack.get().getDocuments());
     }
 
     @Operation(summary = "Скачать документ", description = "Качать можно документ и пакет или по юзер айди " +
