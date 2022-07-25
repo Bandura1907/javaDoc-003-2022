@@ -32,6 +32,7 @@ public class Package {
     private DocumentStatus packageStatus;
 
     @OneToMany(mappedBy = "aPackage", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Document> documents;
 
 //    @JsonIdentityReference(alwaysAsId = true)
