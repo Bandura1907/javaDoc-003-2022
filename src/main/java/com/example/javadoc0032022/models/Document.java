@@ -34,7 +34,7 @@ public class Document {
 
     @JsonProperty("package")
     @ManyToOne
-//    @JsonBackReference
+    @JsonBackReference
     private Package aPackage;
 
 ////    @JsonIgnore
