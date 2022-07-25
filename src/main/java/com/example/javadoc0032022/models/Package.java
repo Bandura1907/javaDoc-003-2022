@@ -36,7 +36,7 @@ public class Package {
     private PackageType packageType;
 
     @OneToMany(mappedBy = "aPackage", cascade = CascadeType.ALL)
-    @JsonIgnore
+    @JsonManagedReference
     private List<Document> documents;
 
     @ManyToOne
