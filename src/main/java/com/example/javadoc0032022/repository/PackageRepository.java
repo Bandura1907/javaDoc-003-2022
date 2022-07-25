@@ -1,6 +1,7 @@
 package com.example.javadoc0032022.repository;
 
 import com.example.javadoc0032022.models.Package;
+import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.models.enums.DocumentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,10 @@ import java.util.List;
 @Repository
 public interface PackageRepository extends JpaRepository<Package, Integer>, PagingAndSortingRepository<Package, Integer> {
 
+    List<Package> findAllByUser(User user);
+    List<Package> findAllBySenderUser(User user);
+    List<Package> findAllByReceiverUser(User user);
+
     List<Package> findAllByPackageStatus(DocumentStatus status);
 
 //    Page<Package> findAllPage(Pageable pageable);
@@ -26,6 +31,7 @@ public interface PackageRepository extends JpaRepository<Package, Integer>, Pagi
     @Query("SELECT p FROM Package p WHERE p.createAt >= :oneDayAgoDate")
     List<Package> findLastPackages(@Param("oneDayAgoDate") LocalDateTime dateTime);
 
-    @Query("SELECT p FROM Package p WHERE p.packageStatus = 'SENT_FOR_SIGNATURE'")
+    @Query("SELECT p FROM Package p WHERE p.packageStatus = 'SENT_FOR_SIGNATURE' OR p.packageStatus = 'NOT_SIGNED' OR " +
+            "p.packageStatus = 'SEND_FOR_APPROVAL'")
     List<Package> findPackagesSending();
 }

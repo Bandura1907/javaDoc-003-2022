@@ -1,6 +1,7 @@
 package com.example.javadoc0032022.services;
 
 import com.example.javadoc0032022.models.Package;
+import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.models.enums.DocumentStatus;
 import com.example.javadoc0032022.repository.PackageRepository;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,18 @@ public class PackageService {
 
     public List<Package> findAll() {
         return packageRepository.findAll();
+    }
+
+    public List<Package> findAllByUser(User user) {
+        return packageRepository.findAllByUser(user);
+    }
+
+    public List<Package> findAllBySenderUser(User user) {
+        return packageRepository.findAllBySenderUser(user);
+    }
+
+    public List<Package> findAllByReceiverUser(User user) {
+        return packageRepository.findAllByReceiverUser(user);
     }
 
     public List<Package> findAllByPackageStatus(DocumentStatus status) {

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 //@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @JsonIgnoreProperties(value = {
         "isTimeLocked", "isPasswordExpired", "loginAttempts", "blockTime", "isNonBlocked", "confirmationTokenList",
-        "refreshToken", "packageSenderList", "packageReceiverList", "resetToken", "isTimeLocked"
+        "refreshToken", "packageSenderList", "packageReceiverList", "resetToken", "isTimeLocked", "packages"
 })
 public class User implements UserDetails{
 
@@ -70,8 +71,8 @@ public class User implements UserDetails{
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<ConfirmationToken> confirmationTokenList;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
-    private List<RefreshToken> refreshToken;
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "user")
+    private RefreshToken refreshToken;
 
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "user")
     private ResetToken resetToken;
@@ -82,6 +83,9 @@ public class User implements UserDetails{
     @OneToMany(mappedBy = "receiverUser", cascade = CascadeType.ALL)
     private List<Package> packageReceiverList;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Package> packages;
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -90,21 +94,25 @@ public class User implements UserDetails{
     }
 
     @Override
+    @JsonIgnore
     public String getUsername() {
         return login;
     }
 
     @Override
+    @JsonIgnore
     public boolean isAccountNonExpired() {
         return true;
     }
 
     @Override
+    @JsonIgnore
     public boolean isAccountNonLocked() {
         return isNonBlocked;
     }
 
     @Override
+    @JsonIgnore
     public boolean isCredentialsNonExpired() {
         return true;
     }

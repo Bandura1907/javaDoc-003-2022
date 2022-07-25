@@ -30,18 +30,11 @@ public class Document {
     private LocalDateTime createAt;
 
     @Lob
+    @JsonIgnore
     private byte[] file;
 
     @JsonProperty("package")
     @ManyToOne
-//    @JsonBackReference
     private Package aPackage;
 
-////    @JsonIgnore
-//    @ManyToOne
-//    private User senderUser;
-//
-////    @JsonIgnore
-//    @ManyToOne
-//    private User receiverUser;
 }

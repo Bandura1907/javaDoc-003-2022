@@ -1,6 +1,7 @@
 package com.example.javadoc0032022.models;
 
 import com.example.javadoc0032022.models.enums.DocumentStatus;
+import com.example.javadoc0032022.models.enums.PackageType;
 import com.fasterxml.jackson.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,9 +32,16 @@ public class Package {
     @Enumerated(EnumType.STRING)
     private DocumentStatus packageStatus;
 
+    @Enumerated(EnumType.STRING)
+    private PackageType packageType;
+
     @OneToMany(mappedBy = "aPackage", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Document> documents;
+
+    @ManyToOne
+    @JsonIgnore
+    private User user;
 
 //    @JsonIdentityReference(alwaysAsId = true)
     @ManyToOne
@@ -43,9 +51,5 @@ public class Package {
     @ManyToOne
     private User receiverUser;
 
-//    @ManyToOne
-//    private User senderUser;
-//
-//    @ManyToOne
-//    private User receiverUser;
+
 }
