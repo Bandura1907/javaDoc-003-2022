@@ -86,7 +86,8 @@ public class UserController {
         confirmationTokenService.saveConfirmationToken(confirmationToken);
         emailSender.send(user.get().getEmail(), userService.buildActivationEmail(
                 user.get().getName() + " " + user.get().getLastName(),
-                confirmationTokenLink + token
+                confirmationTokenLink + token,
+                token
         ));
         return ResponseEntity.ok(new MessageResponse("Confirmation token send"));
     }
