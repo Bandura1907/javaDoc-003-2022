@@ -170,19 +170,26 @@ public class UserService {
         return user;
     }
 
-    public String blockUser(int id) {
+//    public String blockUser(int id) {
+//        User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
+//            user.setNonBlocked(false);
+//            userRepository.save(user);
+//            return "User " + id + " blocked";
+//    }
+
+    public String blockUnblockUser(int id) {
         User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
-            user.setNonBlocked(false);
-            userRepository.save(user);
-            return "User " + id + " blocked";
+        user.setNonBlocked(!user.isNonBlocked());
+        userRepository.save(user);
+        return user.isNonBlocked() ? "User " + id + " unblock" : "User " + id + " block";
     }
 
-    public String unlockUser(int id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
-        user.setNonBlocked(true);
-        userRepository.save(user);
-        return "User " + id + " unlock";
-    }
+//    public String unlockUser(int id) {
+//        User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
+//        user.setNonBlocked(true);
+//        userRepository.save(user);
+//        return "User " + id + " unlock";
+//    }
 
     public String confirmToken(String token) {
         Optional<ConfirmationToken> confirmationToken = confirmationTokenService

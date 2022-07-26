@@ -130,14 +130,14 @@ public class UserController {
     @PutMapping("/block/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<MessageResponse> blockUser(@Parameter(description = "id user", required = true) @PathVariable int id) {
-        return ResponseEntity.ok(new MessageResponse(userService.blockUser(id)));
+        return ResponseEntity.ok(new MessageResponse(userService.blockUnblockUser(id)));
     }
 
-    @PutMapping("/unlock/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<MessageResponse> unlockUser(@PathVariable int id) {
-        return ResponseEntity.ok(new MessageResponse(userService.unlockUser(id)));
-    }
+//    @PutMapping("/unlock/{id}")
+//    @PreAuthorize("hasRole('ROLE_ADMIN')")
+//    public ResponseEntity<MessageResponse> unlockUser(@PathVariable int id) {
+//        return ResponseEntity.ok(new MessageResponse(userService.unlockUser(id)));
+//    }
 
     @Operation(summary = "Метод изменения пароля", description = "Для изменеия пароля нужно сначала ввести старый а потом новый." +
             " Минимальная длина пароля 12")
