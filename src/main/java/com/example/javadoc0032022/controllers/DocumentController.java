@@ -19,7 +19,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -132,11 +134,11 @@ public class DocumentController {
                 zipOut.closeEntry();
             }
             zipOut.close();
-            return ResponseEntity.ok(Map.of("name", "documents.zip",
-                    "file", bo.toByteArray()));
+//            return ResponseEntity.ok(Map.of("name", "documents.zip",
+//                    "file", bo.toByteArray()));
 
-//            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
-//                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
+            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
 
         } else if (userId != null) {
             Optional<User> user = userService.findById(userId);
@@ -146,10 +148,14 @@ public class DocumentController {
             if (document.isEmpty())
                 return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
 
-            return ResponseEntity.ok(Map.of(
-                    "name", document.get().getName(),
-                    "file", document.get().getFile()
-            ));
+//            return ResponseEntity.ok(Map.of(
+//                    "name", document.get().getName(),
+//                    "file", document.get().getFile()
+//            ));
+
+            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + document.get().getName())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(document.get().getFile().length)
+                    .body(document.get().getFile());
         }
 
         Optional<User> user = userService.findByLogin(SecurityContextHolder.getContext().getAuthentication().getName());
@@ -412,12 +418,12 @@ public class DocumentController {
         }
 
         zipOut.close();
-        return ResponseEntity.ok(Map.of(
-                "name", "documents.zip",
-                "file", bo.toByteArray()
-        ));
-//        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
-//                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
+//        return ResponseEntity.ok(Map.of(
+//                "name", "documents.zip",
+//                "file", bo.toByteArray()
+//        ));
+        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
     }
 
     private String getFileExtension(String fileName) {
