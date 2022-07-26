@@ -294,20 +294,18 @@ public class DocumentController {
                 return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
 
             switch (index) {
-                case 0:
-                    documentService.agreed(document.get());
-                    break;
-                case 1:
-                    documentService.subscribe(document.get());
-                    break;
-                case 2:
-                    documentService.refuse(document.get());
-                    break;
-                case 3:
-                    documentService.reject(document.get());
-                    break;
-                default:
-                    return new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
+                case 0 -> documentService.agreed(document.get());
+                case 1 -> documentService.subscribe(document.get());
+                case 2 -> documentService.refuse(document.get());
+                case 3 -> documentService.reject(document.get());
+                default ->
+                        new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
+            }
+
+            Package pack = document.get().getAPackage();
+            if (pack.getDocuments().stream().allMatch(x -> x.getStatus().equals(DocumentStatus.SIGNED))) {
+                pack.setPackageStatus(DocumentStatus.SIGNED);
+                packageService.save(pack);
             }
 
             return ResponseEntity.ok(document.get());

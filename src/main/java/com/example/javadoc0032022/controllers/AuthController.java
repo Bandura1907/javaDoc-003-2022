@@ -195,7 +195,8 @@ public class AuthController {
 //        String link = "http://194.58.96.68:39193/email/" + token;
         emailSender.send(registerRequest.getEmail(), userService.buildActivationEmail(
                 registerRequest.getName() + " " + registerRequest.getLastName(),
-                confirmationTokenLink + token
+                confirmationTokenLink + token,
+                token
         ));
 
 //        return authenticateUser(registerRequest.getLogin(), registerRequest.getPassword());

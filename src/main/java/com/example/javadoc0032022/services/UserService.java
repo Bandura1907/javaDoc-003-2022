@@ -268,10 +268,11 @@ public class UserService {
         return userRepository.enableAppUser(email);
     }
 
-    public String buildActivationEmail(String name, String link) {
+    public String buildActivationEmail(String name, String link, String token) {
         Context context = new Context();
         context.setVariable("link", link);
         context.setVariable("name", name);
+        context.setVariable("token", token);
         return templateEngine.process("activation-email", context);
     }
 
