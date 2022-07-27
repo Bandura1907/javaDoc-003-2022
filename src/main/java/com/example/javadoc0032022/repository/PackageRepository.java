@@ -25,7 +25,7 @@ public interface PackageRepository extends JpaRepository<Package, Integer>, Pagi
 
 //    Page<Package> findAllPage(Pageable pageable);
 
-    @Query("SELECT p FROM Package p WHERE p.name LIKE concat(:name, '%') ")
+    @Query("SELECT p FROM Package p WHERE p.name LIKE concat(:name, '%')")
     Page<Package> findByPackageName(Pageable pageable, @Param("name") String name);
 
     @Query("SELECT p FROM Package p WHERE p.createAt >= :oneDayAgoDate")

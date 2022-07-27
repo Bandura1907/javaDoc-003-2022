@@ -43,12 +43,18 @@ public class Package {
     @JsonIgnore
     private User user;
 
-//    @JsonIdentityReference(alwaysAsId = true)
+    //    @JsonIdentityReference(alwaysAsId = true)
     @ManyToOne
+    @JsonIncludeProperties(value = {
+            "name", "lastName", "surName", "nameOrganization"
+    })
     private User senderUser;
 
-//    @JsonIdentityReference(alwaysAsId = true)
+    //    @JsonIdentityReference(alwaysAsId = true)
     @ManyToOne
+    @JsonIncludeProperties(value = {
+            "name", "lastName", "surName", "nameOrganization"
+    })
     private User receiverUser;
 
 

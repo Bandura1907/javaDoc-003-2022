@@ -90,7 +90,7 @@ public class AuthController {
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         final Optional<User> user = userService.findByLogin(loginRequest.getLogin());
         if (user.isEmpty()) {
-            return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new MessageResponse("incorrect data"), HttpStatus.NOT_FOUND);
         }
 
 
@@ -103,7 +103,7 @@ public class AuthController {
         } else {
             System.out.println(new Date(user.get().getBlockTime()));
             if (user.get().isTimeLocked() && Calendar.getInstance().getTimeInMillis() <= user.get().getBlockTime()) {
-                return new ResponseEntity<>(new MessageResponse("time locke"), HttpStatus.UNAUTHORIZED);
+                return new ResponseEntity<>(new MessageResponse("time lock"), HttpStatus.UNAUTHORIZED);
             }
 
             int attempts = user.get().getLoginAttempts() + 1;
@@ -133,7 +133,6 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = MessageResponse.class)))
     })
     @PostMapping("/register")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         if (userService.existsByLogin(registerRequest.getLogin())) {
             return ResponseEntity.badRequest()

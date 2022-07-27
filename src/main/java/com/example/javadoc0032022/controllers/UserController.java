@@ -19,6 +19,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -51,11 +54,28 @@ public class UserController {
         this.confirmationTokenService = confirmationTokenService;
     }
 
-    @Operation(summary = "Метод получения всех юзеров")
+//    @Operation(summary = "Метод получения всех юзеров")
+//    @ApiResponse(responseCode = "200", description = "Получены все юзеры")
+//    @GetMapping
+//    public ResponseEntity<List<User>> getAllUsers() {
+//        return ResponseEntity.ok(userService.findAll());
+//    }
+
+    @Operation(summary = "Метод получения всех юзеров", description = "тут работает пагинация и поиск по основным полям" +
+            " которие есть на фронте")
     @ApiResponse(responseCode = "200", description = "Получены все юзеры")
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.findAll());
+    public ResponseEntity<?> getAllUsers(@Parameter(description = "номер страницы (начинается с 0)") @RequestParam(defaultValue = "0") int page,
+                                         @Parameter(description = "поиск") @RequestParam(required = false) String search) {
+        Pageable pageable = PageRequest.of(page, 10);
+        Page<User> pageTuts;
+        if (search != null) {
+            pageTuts = userService.getUsersByFiltersSearch(pageable, search);
+        } else
+            pageTuts = userService.findAllPageable(pageable);
+
+        return ResponseEntity.ok(pageTuts.getContent());
+
     }
 
     @Operation(summary = "Метод получения юзера по id")

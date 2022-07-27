@@ -11,6 +11,8 @@ import com.example.javadoc0032022.repository.ResetTokenRepository;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -52,6 +54,14 @@ public class UserService {
 
     public List<User> findAll() {
         return userRepository.findAll();
+    }
+
+    public Page<User> findAllPageable(Pageable pageable) {
+        return userRepository.findAll(pageable);
+    }
+
+    public Page<User> getUsersByFiltersSearch(Pageable pageable, String search) {
+        return userRepository.getUsersByFiltersSearch(pageable, search);
     }
 
 
@@ -170,13 +180,6 @@ public class UserService {
         return user;
     }
 
-//    public String blockUser(int id) {
-//        User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
-//            user.setNonBlocked(false);
-//            userRepository.save(user);
-//            return "User " + id + " blocked";
-//    }
-
     public String blockUnblockUser(int id) {
         User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
         user.setNonBlocked(!user.isNonBlocked());
@@ -184,12 +187,6 @@ public class UserService {
         return user.isNonBlocked() ? "User " + id + " unblock" : "User " + id + " block";
     }
 
-//    public String unlockUser(int id) {
-//        User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("Error: User not found."));
-//        user.setNonBlocked(true);
-//        userRepository.save(user);
-//        return "User " + id + " unlock";
-//    }
 
     public String confirmToken(String token) {
         Optional<ConfirmationToken> confirmationToken = confirmationTokenService
