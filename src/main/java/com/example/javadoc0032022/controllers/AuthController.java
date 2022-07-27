@@ -133,6 +133,7 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = MessageResponse.class)))
     })
     @PostMapping("/register")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         if (userService.existsByLogin(registerRequest.getLogin())) {
             return ResponseEntity.badRequest()

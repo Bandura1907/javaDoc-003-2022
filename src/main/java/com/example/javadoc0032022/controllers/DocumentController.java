@@ -67,6 +67,18 @@ public class DocumentController {
         return ResponseEntity.ok(packageService.findAll());
     }
 
+    @GetMapping("/file/{dockId}")
+    public ResponseEntity<?> getDocumentFile(@PathVariable int dockId) {
+        Optional<Document> document = documentService.findById(dockId);
+        if (document.isEmpty())
+            return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
+
+        return ResponseEntity.ok(Map.of(
+                "name", document.get().getName(),
+                "file", document.get().getFile()
+        ));
+    }
+
     @GetMapping("/get_last_unsigned")
     public ResponseEntity<List<Document>> getDocsAwaitingSigning() {
         List<Document> documents = documentService.findAll().stream()
