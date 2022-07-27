@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 //@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @JsonIgnoreProperties(value = {
         "isTimeLocked", "isPasswordExpired", "loginAttempts", "blockTime", "isNonBlocked", "confirmationTokenList",
-        "refreshToken", "packageSenderList", "packageReceiverList", "resetToken", "isTimeLocked", "packages"
+        "refreshToken", "packageSenderList", "packageReceiverList", "resetToken", "isTimeLocked", "packages", "operationsHistories"
 })
 public class User implements UserDetails{
 
@@ -85,6 +85,9 @@ public class User implements UserDetails{
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Package> packages;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<OperationsHistory> operationsHistories;
 
 
     @Override

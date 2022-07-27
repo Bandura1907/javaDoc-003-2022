@@ -1,14 +1,13 @@
 package com.example.javadoc0032022.controllers;
 
-import com.example.javadoc0032022.models.Document;
+import com.example.javadoc0032022.models.*;
 import com.example.javadoc0032022.models.Package;
-import com.example.javadoc0032022.models.Role;
-import com.example.javadoc0032022.models.User;
 import com.example.javadoc0032022.models.enums.DocumentStatus;
 import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.models.enums.PackageType;
 import com.example.javadoc0032022.payload.response.DocumentFilterResponse;
 import com.example.javadoc0032022.payload.response.MessageResponse;
+import com.example.javadoc0032022.repository.OperationsHistoryRepository;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.services.DocumentService;
 import com.example.javadoc0032022.services.PackageService;
@@ -25,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -48,12 +48,14 @@ public class DocumentController {
     private final UserService userService;
     private final RoleRepository roleRepository;
     private final PackageService packageService;
+    private final OperationsHistoryRepository operationsHistoryRepository;
 
-    public DocumentController(DocumentService documentService, UserService userService, RoleRepository roleRepository, PackageService packageService) {
+    public DocumentController(DocumentService documentService, UserService userService, RoleRepository roleRepository, PackageService packageService, OperationsHistoryRepository operationsHistoryRepository) {
         this.documentService = documentService;
         this.userService = userService;
         this.roleRepository = roleRepository;
         this.packageService = packageService;
+        this.operationsHistoryRepository = operationsHistoryRepository;
     }
 
     @GetMapping
@@ -150,7 +152,7 @@ public class DocumentController {
 //                    "file", bo.toByteArray()));
 
             return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=documents.zip")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM).contentLength(bo.size()).body(bo.toByteArray());
 
         } else if (userId != null) {
             Optional<User> user = userService.findById(userId);
@@ -209,6 +211,10 @@ public class DocumentController {
         pack.setDocuments(documents);
         Package savePack = packageService.save(pack);
 
+        String ipAddress = ((WebAuthenticationDetails) SecurityContextHolder.getContext().getAuthentication().getDetails()).getRemoteAddress();
+        operationsHistoryRepository.save(new OperationsHistory("Пользователь " + user.getName() + " создал пакет документов "
+                + pack.getName(), ipAddress, LocalDateTime.now(), user));
+
         return ResponseEntity.ok(Map.of("packageId", savePack.getId()));
     }
 
@@ -225,6 +231,9 @@ public class DocumentController {
         pack.get().setReceiverUser(user.get());
         pack.get().setSenderUser(userPrincipal);
         packageService.save(pack.get());
+
+        operationsHistoryRepository.save(new OperationsHistory("Пользователь " + userPrincipal.getName() + " отправил пакет документов ("
+                + pack.get().getName() + ") пользователю " + user.get().getName(), LocalDateTime.now(), userPrincipal));
 
         return ResponseEntity.ok(new MessageResponse("Send to user: " + user.get().getId()));
     }
@@ -257,14 +266,12 @@ public class DocumentController {
 
     @PutMapping("/add/{packId}")
     public ResponseEntity<?> addDocument(@PathVariable int packId,
-                                         @RequestParam("file") MultipartFile[] files) throws IOException {
+                                         @RequestParam("file") MultipartFile[] files,
+                                         @AuthenticationPrincipal User user) throws IOException {
         Optional<Package> pack = packageService.findById(packId);
         if (pack.isEmpty())
             return new ResponseEntity<>(new MessageResponse("Package not found"), HttpStatus.NOT_FOUND);
 
-//        for (var file : files) {
-//            System.out.println(getFileExtension(file.getOriginalFilename()));
-//        }
 
         for (MultipartFile file : files) {
             Document document = new Document();
@@ -279,6 +286,10 @@ public class DocumentController {
             document.setFile(file.getBytes());
             document.setAPackage(pack.get());
             documentService.save(document);
+
+            operationsHistoryRepository.save(new OperationsHistory(
+                    "Пользователь " + user.getName() + " добавил документ (" + document.getName() + ") в пакет "
+                            + pack.get().getName(), LocalDateTime.now(), user));
         }
 
         return ResponseEntity.ok(pack.get());

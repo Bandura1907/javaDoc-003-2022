@@ -8,6 +8,7 @@ import com.example.javadoc0032022.payload.request.InfoUserRequest;
 import com.example.javadoc0032022.payload.request.ResetPasswordRequest;
 import com.example.javadoc0032022.payload.response.MessageResponse;
 import com.example.javadoc0032022.payload.response.UserResponse;
+import com.example.javadoc0032022.repository.OperationsHistoryRepository;
 import com.example.javadoc0032022.services.ConfirmationTokenService;
 import com.example.javadoc0032022.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,12 +26,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -45,13 +46,15 @@ public class UserController {
     private final EmailSender emailSender;
     private final PasswordEncoder encoder;
     private final ConfirmationTokenService confirmationTokenService;
+    private final OperationsHistoryRepository operationsHistoryRepository;
 
     @Autowired
-    public UserController(UserService userService, EmailSender emailSender, PasswordEncoder encoder, ConfirmationTokenService confirmationTokenService) {
+    public UserController(UserService userService, EmailSender emailSender, PasswordEncoder encoder, ConfirmationTokenService confirmationTokenService, OperationsHistoryRepository operationsHistoryRepository) {
         this.userService = userService;
         this.emailSender = emailSender;
         this.encoder = encoder;
         this.confirmationTokenService = confirmationTokenService;
+        this.operationsHistoryRepository = operationsHistoryRepository;
     }
 
 //    @Operation(summary = "Метод получения всех юзеров")
@@ -151,6 +154,7 @@ public class UserController {
     @PutMapping("/block/{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<MessageResponse> blockUser(@Parameter(description = "id user", required = true) @PathVariable int id) {
+
         return ResponseEntity.ok(new MessageResponse(userService.blockUnblockUser(id)));
     }
 

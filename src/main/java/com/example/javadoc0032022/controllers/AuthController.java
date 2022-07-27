@@ -2,6 +2,7 @@ package com.example.javadoc0032022.controllers;
 
 import com.example.javadoc0032022.email.EmailSender;
 import com.example.javadoc0032022.exception.TokenRefreshException;
+import com.example.javadoc0032022.models.OperationsHistory;
 import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.models.Role;
 import com.example.javadoc0032022.models.User;
@@ -13,6 +14,7 @@ import com.example.javadoc0032022.payload.request.TokenRefreshRequest;
 import com.example.javadoc0032022.payload.response.JwtResponse;
 import com.example.javadoc0032022.payload.response.MessageResponse;
 import com.example.javadoc0032022.payload.response.TokenRefreshResponse;
+import com.example.javadoc0032022.repository.OperationsHistoryRepository;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.security.jwt.JwtUtils;
 import com.example.javadoc0032022.security.service.RefreshTokenService;
@@ -32,6 +34,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -60,12 +63,14 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final ConfirmationTokenService confirmationTokenService;
     private final EmailSender emailSender;
+    private final OperationsHistoryRepository operationsHistoryRepository;
 
     @Autowired
     public AuthController(AuthenticationManager authenticationManager, JwtUtils jwtUtils,
                           UserService userService, PasswordEncoder passwordEncoder,
                           RoleRepository roleRepository, RefreshTokenService refreshTokenService,
-                          ConfirmationTokenService confirmationTokenService, EmailSender emailSender) {
+                          ConfirmationTokenService confirmationTokenService, EmailSender emailSender,
+                          OperationsHistoryRepository operationsHistoryRepository) {
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
         this.userService = userService;
@@ -74,6 +79,7 @@ public class AuthController {
         this.refreshTokenService = refreshTokenService;
         this.confirmationTokenService = confirmationTokenService;
         this.emailSender = emailSender;
+        this.operationsHistoryRepository = operationsHistoryRepository;
     }
 
     @Operation(summary = "Метод для авторизации пользователя", description = "После 3 попыток неудачной авторизации блокирует юзера на 1 минуту," +
@@ -98,16 +104,19 @@ public class AuthController {
             user.get().setLoginAttempts(0);
             user.get().setTimeLocked(false);
             userService.save(user.get());
+            operationsHistoryRepository.save(new OperationsHistory("Пользователь " + user.get().getName() + " зашел в " +
+                    "систему", LocalDateTime.now(), user.get()));
             return authenticateUser(loginRequest.getLogin(), loginRequest.getPassword());
 
         } else {
-            System.out.println(new Date(user.get().getBlockTime()));
+
             if (user.get().isTimeLocked() && Calendar.getInstance().getTimeInMillis() <= user.get().getBlockTime()) {
                 return new ResponseEntity<>(new MessageResponse("time lock"), HttpStatus.UNAUTHORIZED);
             }
 
             int attempts = user.get().getLoginAttempts() + 1;
             user.get().setLoginAttempts(attempts);
+
             if (user.get().getLoginAttempts() == 4) {
                 user.get().setBlockTime(Calendar.getInstance().getTimeInMillis() + MIN1);
                 user.get().setTimeLocked(true);
@@ -118,6 +127,8 @@ public class AuthController {
                 user.get().setBlockTime(Calendar.getInstance().getTimeInMillis() + HOUR1);
                 user.get().setTimeLocked(true);
             }
+            operationsHistoryRepository.save(new OperationsHistory("Пользовать " + user.get().getName() + " " +
+                    "попыталься зайти в систему (попыток входа " + attempts + ")", LocalDateTime.now(), user.get()));
 
             userService.save(user.get());
             return new ResponseEntity<>(new MessageResponse("Attempts " + user.get().getLoginAttempts()), HttpStatus.UNAUTHORIZED);
@@ -134,7 +145,8 @@ public class AuthController {
     })
     @PostMapping("/register")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest,
+                                          @AuthenticationPrincipal User userPrincipal) {
         if (userService.existsByLogin(registerRequest.getLogin())) {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse("User " + registerRequest.getLogin() + " already register"));
@@ -197,6 +209,13 @@ public class AuthController {
                 registerRequest.getName() + " " + registerRequest.getLastName(),
                 confirmationTokenLink + token,
                 token
+        ));
+
+        operationsHistoryRepository.save(new OperationsHistory(
+                "Пользователь " + userPrincipal.getName()+" создал пользователя " + user.getName() +
+                " " + user.getLastName() + " " + user.getSurName(),
+                LocalDateTime.now(),
+                userPrincipal
         ));
 
 //        return authenticateUser(registerRequest.getLogin(), registerRequest.getPassword());
