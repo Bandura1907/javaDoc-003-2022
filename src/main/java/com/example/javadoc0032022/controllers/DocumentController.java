@@ -29,6 +29,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -49,13 +50,16 @@ public class DocumentController {
     private final RoleRepository roleRepository;
     private final PackageService packageService;
     private final OperationsHistoryRepository operationsHistoryRepository;
+    private final HttpServletRequest request;
 
-    public DocumentController(DocumentService documentService, UserService userService, RoleRepository roleRepository, PackageService packageService, OperationsHistoryRepository operationsHistoryRepository) {
+    public DocumentController(DocumentService documentService, UserService userService, RoleRepository roleRepository,
+                              PackageService packageService, OperationsHistoryRepository operationsHistoryRepository, HttpServletRequest request) {
         this.documentService = documentService;
         this.userService = userService;
         this.roleRepository = roleRepository;
         this.packageService = packageService;
         this.operationsHistoryRepository = operationsHistoryRepository;
+        this.request = request;
     }
 
     @GetMapping
@@ -211,7 +215,7 @@ public class DocumentController {
         pack.setDocuments(documents);
         Package savePack = packageService.save(pack);
 
-        String ipAddress = ((WebAuthenticationDetails) SecurityContextHolder.getContext().getAuthentication().getDetails()).getRemoteAddress();
+        String ipAddress = request.getRemoteAddr();
         operationsHistoryRepository.save(new OperationsHistory("Пользователь " + user.getName() + " создал пакет документов "
                 + pack.getName(), ipAddress, LocalDateTime.now(), user));
 

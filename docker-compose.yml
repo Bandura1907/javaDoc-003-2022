@@ -13,7 +13,7 @@ services:
       - ./db:/var/lib/mysql
 
   maildev:
-    image: soulteary/maildev
+    image: maildev/maildev
     container_name: maildev
     restart: always
     environment:
