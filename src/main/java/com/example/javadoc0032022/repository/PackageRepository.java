@@ -17,9 +17,9 @@ import java.util.List;
 @Repository
 public interface PackageRepository extends JpaRepository<Package, Integer>, PagingAndSortingRepository<Package, Integer> {
 
-    List<Package> findAllByUser(User user);
-    List<Package> findAllBySenderUser(User user);
-    List<Package> findAllByReceiverUser(User user);
+//    List<Package> findAllByUser(User user);
+//    List<Package> findAllBySenderUser(User user);
+//    List<Package> findAllByReceiverUser(User user);
 
     List<Package> findAllByPackageStatus(DocumentStatus status);
 
@@ -34,4 +34,13 @@ public interface PackageRepository extends JpaRepository<Package, Integer>, Pagi
     @Query("SELECT p FROM Package p WHERE p.packageStatus = 'SENT_FOR_SIGNATURE' OR p.packageStatus = 'NOT_SIGNED' OR " +
             "p.packageStatus = 'SEND_FOR_APPROVAL'")
     List<Package> findPackagesSending();
+
+    @Query("SELECT p FROM Package p WHERE p.senderUser.id = :userId")
+    List<Package> findOutgoingPackages(@Param("userId") int userId);
+
+    @Query("SELECT p FROM Package p WHERE p.receiverUser.id = :userId")
+    List<Package> findIncomingPackages(@Param("userId") int userId);
+
+    @Query("SELECT p FROM Package p WHERE p.receiverUser.id = :userId OR p.senderUser.id = :userId")
+    List<Package> findAllUserPackages(@Param("userId") int userId);
 }

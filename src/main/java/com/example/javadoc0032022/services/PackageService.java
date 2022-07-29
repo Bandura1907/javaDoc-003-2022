@@ -23,17 +23,17 @@ public class PackageService {
         return packageRepository.findAll();
     }
 
-    public List<Package> findAllByUser(User user) {
-        return packageRepository.findAllByUser(user);
-    }
+//    public List<Package> findAllByUser(User user) {
+//        return packageRepository.findAllByUser(user);
+//    }
 
-    public List<Package> findAllBySenderUser(User user) {
-        return packageRepository.findAllBySenderUser(user);
-    }
+//    public List<Package> findAllBySenderUser(User user) {
+//        return packageRepository.findAllBySenderUser(user);
+//    }
 
-    public List<Package> findAllByReceiverUser(User user) {
-        return packageRepository.findAllByReceiverUser(user);
-    }
+//    public List<Package> findAllByReceiverUser(User user) {
+//        return packageRepository.findAllByReceiverUser(user);
+//    }
 
     public List<Package> findAllByPackageStatus(DocumentStatus status) {
         return packageRepository.findAllByPackageStatus(status);
@@ -53,6 +53,18 @@ public class PackageService {
 
     public Page<Package> findByPackageName(Pageable pageable, String name) {
         return packageRepository.findByPackageName(pageable, name);
+    }
+
+    public List<Package> findOutgoingPackages(int userId) {
+        return packageRepository.findOutgoingPackages(userId);
+    }
+
+    public List<Package> findIncomingPackages(int userId) {
+        return packageRepository.findIncomingPackages(userId);
+    }
+
+    public List<Package> findAllUserPackages(int userId) {
+        return packageRepository.findAllUserPackages(userId);
     }
 
     public Optional<Package> findById(int id) {

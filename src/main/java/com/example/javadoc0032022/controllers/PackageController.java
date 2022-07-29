@@ -66,30 +66,25 @@ public class PackageController {
 
     @GetMapping("/packs_by_filters")
     public ResponseEntity<?> getPackagesByFilters(@AuthenticationPrincipal User user) {
-//        Role roleUser = roleRepository.findByRole(ERole.ROLE_USER).get();
-//        Role roleEmployee = roleRepository.findByRole(ERole.ROLE_EMPLOYEE).get();
-//        Role roleAdmin = roleRepository.findByRole(ERole.ROLE_ADMIN).get();
+
+        List<Package> incoming = packageService.findIncomingPackages(user.getId());
+        List<Package> outgoing = packageService.findOutgoingPackages(user.getId());
+        List<Package> drafts = packageService.findAllUserPackages(user.getId()).stream().filter(Package::isDraft).toList();
+        List<Package> all = packageService.findAllUserPackages(user.getId());
+
+//        boolean isAdmin = user.getRoles().stream().toList().get(0).getRole().equals(ERole.ROLE_ADMIN);
+//        boolean isEmployee = user.getRoles().stream().toList().get(0).getRole().equals(ERole.ROLE_EMPLOYEE);
+//        boolean isUser  = user.getRoles().stream().toList().get(0).getRole().equals(ERole.ROLE_USER);
 
 
 
-        List<Package> incoming = new ArrayList<>();
-        List<Package> outgoing = new ArrayList<>();
-        List<Package> drafts = packageService.findAllByUser(user).stream().filter(Package::isDraft).toList();
-        List<Package> all = packageService.findAllByUser(user);
-
-        boolean isAdmin = user.getRoles().stream().toList().get(0).getRole().equals(ERole.ROLE_ADMIN);
-        boolean isEmployee = user.getRoles().stream().toList().get(0).getRole().equals(ERole.ROLE_EMPLOYEE);
-        boolean isUser  = user.getRoles().stream().toList().get(0).getRole().equals(ERole.ROLE_USER);
-
-
-
-        if (isAdmin || isEmployee) {
-            outgoing.addAll(packageService.findAll().stream().filter(x -> x.getReceiverUser() != null &&
-                    x.getSenderUser().equals(user)).toList());
-        } else if (isUser) {
-            incoming.addAll(packageService.findAll().stream().filter(x -> x.getSenderUser() != null &&
-                    x.getReceiverUser().equals(user)).toList());
-        }
+//        if (isAdmin || isEmployee) {
+//            outgoing.addAll(packageService.findAll().stream().filter(x -> x.getReceiverUser() != null).toList());
+//            incoming.addAll(packageService.findAll().stream().filter(x -> x.getSenderUser() != null).toList());
+//        } else if (isUser) {
+//            incoming.addAll(packageService.findAll().stream().filter(x -> x.getSenderUser() != null &&
+//                    x.getReceiverUser().equals(user)).toList());
+//        }
 
 
         return ResponseEntity.ok(Map.of(
