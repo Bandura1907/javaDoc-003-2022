@@ -84,9 +84,11 @@ public class PackageController {
 
 
         if (isAdmin || isEmployee) {
-            outgoing.addAll(packageService.findAll().stream().filter(x -> x.getReceiverUser() != null).toList());
+            outgoing.addAll(packageService.findAll().stream().filter(x -> x.getReceiverUser() != null &&
+                    x.getSenderUser().equals(user)).toList());
         } else if (isUser) {
-            incoming.addAll(packageService.findAll().stream().filter(x -> x.getSenderUser() != null).toList());
+            incoming.addAll(packageService.findAll().stream().filter(x -> x.getSenderUser() != null &&
+                    x.getReceiverUser().equals(user)).toList());
         }
 
 
