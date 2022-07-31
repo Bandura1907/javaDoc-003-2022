@@ -98,7 +98,7 @@ public class AuthController {
         if (user.isEmpty()) {
             return new ResponseEntity<>(new MessageResponse("incorrect data"), HttpStatus.NOT_FOUND);
         }
-
+        System.out.printf("User %s is authetificate in acc %s%n", user.get().getName(), user.get().getId());
 
         if (passwordEncoder.matches(loginRequest.getPassword(), user.get().getPassword()) && user.get().getBlockTime() <= Calendar.getInstance().getTimeInMillis()) {
             user.get().setLoginAttempts(0);

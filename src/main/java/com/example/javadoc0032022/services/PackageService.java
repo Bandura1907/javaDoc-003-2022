@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,22 +20,11 @@ import java.util.Optional;
 public class PackageService {
 
     private PackageRepository packageRepository;
+    private TemplateEngine templateEngine;
 
     public List<Package> findAll() {
         return packageRepository.findAll();
     }
-
-//    public List<Package> findAllByUser(User user) {
-//        return packageRepository.findAllByUser(user);
-//    }
-
-//    public List<Package> findAllBySenderUser(User user) {
-//        return packageRepository.findAllBySenderUser(user);
-//    }
-
-//    public List<Package> findAllByReceiverUser(User user) {
-//        return packageRepository.findAllByReceiverUser(user);
-//    }
 
     public List<Package> findAllByPackageStatus(DocumentStatus status) {
         return packageRepository.findAllByPackageStatus(status);
@@ -77,5 +68,11 @@ public class PackageService {
 
     public void deleteById(int id) {
         packageRepository.deleteById(id);
+    }
+
+    public String buildNotificationEmail(String packageName) {
+        Context context = new Context();
+        context.setVariable("packageName", packageName);
+        return templateEngine.process("document-mail", context);
     }
 }

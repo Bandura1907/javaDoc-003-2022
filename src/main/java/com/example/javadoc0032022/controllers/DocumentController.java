@@ -1,5 +1,6 @@
 package com.example.javadoc0032022.controllers;
 
+import com.example.javadoc0032022.email.EmailSender;
 import com.example.javadoc0032022.models.*;
 import com.example.javadoc0032022.models.Package;
 import com.example.javadoc0032022.models.enums.DocumentStatus;
@@ -24,12 +25,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -50,20 +49,21 @@ public class DocumentController {
     private final RoleRepository roleRepository;
     private final PackageService packageService;
     private final OperationsHistoryRepository operationsHistoryRepository;
-    private final HttpServletRequest request;
+    private final EmailSender emailSender;
 
     public DocumentController(DocumentService documentService, UserService userService, RoleRepository roleRepository,
-                              PackageService packageService, OperationsHistoryRepository operationsHistoryRepository, HttpServletRequest request) {
+                              PackageService packageService, OperationsHistoryRepository operationsHistoryRepository, EmailSender emailSender) {
         this.documentService = documentService;
         this.userService = userService;
         this.roleRepository = roleRepository;
         this.packageService = packageService;
         this.operationsHistoryRepository = operationsHistoryRepository;
-        this.request = request;
+        this.emailSender = emailSender;
     }
 
     @GetMapping
-    public ResponseEntity<List<Package>> getDocuments(@RequestParam(value = "revers", required = false, defaultValue = "false") boolean revers) {
+    public ResponseEntity<List<Package>> getDocuments(@RequestParam(value = "revers", required = false, defaultValue = "false")
+                                                      boolean revers) {
         if (revers) {
             List<Package> packages = packageService.findAll();
             Collections.reverse(packages);
@@ -215,9 +215,11 @@ public class DocumentController {
         pack.setDocuments(documents);
         Package savePack = packageService.save(pack);
 
-        String ipAddress = request.getRemoteAddr();
-        operationsHistoryRepository.save(new OperationsHistory("Пользователь " + user.getName() + " создал пакет документов "
-                + pack.getName(), ipAddress, LocalDateTime.now(), user));
+        operationsHistoryRepository.save(new OperationsHistory(
+                String.format("Пользователь %s создал пакет документов %s", user.getName(), pack.getName()),
+                LocalDateTime.now(),
+                user
+        ));
 
         return ResponseEntity.ok(Map.of("packageId", savePack.getId()));
     }
@@ -236,8 +238,16 @@ public class DocumentController {
         pack.get().setSenderUser(userPrincipal);
         packageService.save(pack.get());
 
-        operationsHistoryRepository.save(new OperationsHistory("Пользователь " + userPrincipal.getName() + " отправил пакет документов ("
-                + pack.get().getName() + ") пользователю " + user.get().getName(), LocalDateTime.now(), userPrincipal));
+        operationsHistoryRepository.save(new OperationsHistory(
+                String.format("Пользователь %s отправил пакет документов (%s) пользователю %s", userPrincipal.getName(),
+                        pack.get().getName(), user.get().getName()),
+                LocalDateTime.now(),
+                userPrincipal
+        ));
+
+        emailSender.send(user.get().getEmail(), packageService.buildNotificationEmail(
+                pack.get().getName()
+        ));
 
         return ResponseEntity.ok(new MessageResponse("Send to user: " + user.get().getId()));
     }
@@ -292,8 +302,11 @@ public class DocumentController {
             documentService.save(document);
 
             operationsHistoryRepository.save(new OperationsHistory(
-                    "Пользователь " + user.getName() + " добавил документ (" + document.getName() + ") в пакет "
-                            + pack.get().getName(), LocalDateTime.now(), user));
+                    String.format("Пользователь %s добавил документ (%s) в пакет %s", user.getName(), document.getName(),
+                            pack.get().getName()),
+                    LocalDateTime.now(),
+                    user
+            ));
         }
 
         return ResponseEntity.ok(pack.get());
@@ -319,7 +332,9 @@ public class DocumentController {
     @PutMapping("/change_status/{index}")
     public ResponseEntity<?> changeStatusDocument(@Parameter(required = true, description = "Index") @PathVariable Integer index,
                                                   @RequestParam(value = "package_id", required = false) Integer packId,
-                                                  @RequestParam(value = "document_id", required = false) Integer docId) {
+                                                  @RequestParam(value = "document_id", required = false) Integer docId,
+                                                  @AuthenticationPrincipal User user) {
+        OperationsHistory operationsHistory = new OperationsHistory();
 
         if (docId != null && packId == null) {
             Optional<Document> document = documentService.findById(docId);
@@ -327,10 +342,26 @@ public class DocumentController {
                 return new ResponseEntity<>(new MessageResponse("Document not found"), HttpStatus.NOT_FOUND);
 
             switch (index) {
-                case 0 -> documentService.agreed(document.get());
-                case 1 -> documentService.subscribe(document.get());
-                case 2 -> documentService.refuse(document.get());
-                case 3 -> documentService.reject(document.get());
+                case 0 -> {
+                    documentService.agreed(document.get());
+                    operationsHistory.setOperationName(String.format("Пользовател %s согласовал документ %s",
+                            user.getName(), document.get().getName()));
+                }
+                case 1 -> {
+                    documentService.subscribe(document.get());
+                    operationsHistory.setOperationName(String.format("Пользовател %s подписал документ %s",
+                            user.getName(), document.get().getName()));
+                }
+                case 2 -> {
+                    documentService.refuse(document.get());
+                    operationsHistory.setOperationName(String.format("Пользовател %s отказал документ %s",
+                            user.getName(), document.get().getName()));
+                }
+                case 3 -> {
+                    documentService.reject(document.get());
+                    operationsHistory.setOperationName(String.format("Пользовател %s отклонил документ %s",
+                            user.getName(), document.get().getName()));
+                }
                 default ->
                         new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
             }
@@ -348,20 +379,29 @@ public class DocumentController {
                 return new ResponseEntity<>(new MessageResponse("Package not found"), HttpStatus.NOT_FOUND);
 
             switch (index) {
-                case 0:
+                case 0 -> {
                     pack.get().setPackageStatus(DocumentStatus.AGREED);
-                    break;
-                case 1:
+                    operationsHistory.setOperationName(String.format("Пользователь %s согласовал пакет %s",
+                            user.getName(), pack.get().getName()));
+                }
+                case 1 -> {
                     pack.get().setPackageStatus(DocumentStatus.SIGNED);
-                    break;
-                case 2:
+                    operationsHistory.setOperationName(String.format("Пользователь %s подписал пакет %s",
+                            user.getName(), pack.get().getName()));
+                }
+
+                case 2 -> {
                     pack.get().setPackageStatus(DocumentStatus.DENIED);
-                    break;
-                case 3:
+                    operationsHistory.setOperationName(String.format("Пользователь %s отказал пакет %s",
+                            user.getName(), pack.get().getName()));
+                }
+                case 3 -> {
                     pack.get().setPackageStatus(DocumentStatus.REJECTED);
-                    break;
-                default:
-                    return new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
+                    operationsHistory.setOperationName(String.format("Пользователь %s отколнил пакет %s",
+                            user.getName(), pack.get().getName()));
+                }
+                default ->
+                        new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
             }
 
             return ResponseEntity.ok(packageService.save(pack.get()));
@@ -372,25 +412,37 @@ public class DocumentController {
                 return new ResponseEntity<>(new MessageResponse("Doc or pack not found"), HttpStatus.NOT_FOUND);
 
             switch (index) {
-                case 0:
+                case 0 -> {
                     pack.get().setPackageStatus(DocumentStatus.AGREED);
                     documentService.agreed(document.get());
-                    break;
-                case 1:
+                    operationsHistory.setOperationName(String.format("Пользователь %s согласовал пакет %s и докумет %s",
+                            user.getName(), pack.get().getName(), document.get().getName()));
+                }
+                case 1 -> {
                     pack.get().setPackageStatus(DocumentStatus.SIGNED);
                     documentService.subscribe(document.get());
-                    break;
-                case 2:
+                    operationsHistory.setOperationName(String.format("Пользователь %s подписал пакет %s и докумет %s",
+                            user.getName(), pack.get().getName(), document.get().getName()));
+                }
+                case 2 -> {
                     pack.get().setPackageStatus(DocumentStatus.DENIED);
                     documentService.refuse(document.get());
-                    break;
-                case 3:
+                    operationsHistory.setOperationName(String.format("Пользователь %s отказал пакет %s и докумет %s",
+                            user.getName(), pack.get().getName(), document.get().getName()));
+                }
+                case 3 -> {
                     pack.get().setPackageStatus(DocumentStatus.REJECTED);
                     documentService.reject(document.get());
-                    break;
-                default:
-                    return new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
+                    operationsHistory.setOperationName(String.format("Пользователь %s отколнил пакет %s и докумет %s",
+                            user.getName(), pack.get().getName(), document.get().getName()));
+                }
+                default ->
+                        new ResponseEntity<>(new MessageResponse("Index not found (range index 0-3)"), HttpStatus.NOT_FOUND);
             }
+
+            operationsHistory.setCreateAt(LocalDateTime.now());
+            operationsHistory.setUser(user);
+            operationsHistoryRepository.save(operationsHistory);
 
             return ResponseEntity.ok(packageService.save(pack.get()));
         } else {
@@ -400,15 +452,6 @@ public class DocumentController {
 //        return ResponseEntity.ok(document.get());
     }
 
-    //
-//    @Operation(summary = "Удаление документа")
-//    @DeleteMapping("{id}")
-//    public ResponseEntity<MessageResponse> deleteDocument(@Parameter(required = true, description = "Document ID")
-//                                                          @PathVariable int id) {
-//        documentService.deleteById(id);
-//        return ResponseEntity.ok(new MessageResponse("Document deleted"));
-//    }
-//
     private ResponseEntity<?> downloadZipFiles(Optional<User> user) throws IOException {
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         ZipOutputStream zipOut = new ZipOutputStream(bo);
@@ -419,12 +462,6 @@ public class DocumentController {
             return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.NOT_FOUND);
 
         if (user.get().getRoles().contains(roleEmployee)) {
-//            for (Document doc : user.get().getDocumentSenderList()) {
-//                ZipEntry zipEntry = new ZipEntry(doc.getDocName());
-//                zipOut.putNextEntry(zipEntry);
-//                zipOut.write(doc.getFile());
-//                zipOut.closeEntry();
-//            }
             for (Package pack : user.get().getPackageSenderList()) {
                 for (Document doc : pack.getDocuments()) {
                     ZipEntry zipEntry = new ZipEntry(doc.getName());
