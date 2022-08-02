@@ -28,14 +28,6 @@ public class JavaDoc0032022Application {
         SpringApplication.run(JavaDoc0032022Application.class, args);
     }
 
-//    @Bean
-//    MultipartConfigElement multipartConfigElement() {
-//        MultipartConfigFactory factory = new MultipartConfigFactory();
-//        factory.setMaxFileSize(DataSize.ofMegabytes(30)); //10GB
-//        factory.setMaxRequestSize(DataSize.ofMegabytes(30)); //10GB
-//        return factory.createMultipartConfig();
-//    }
-
     @Bean
     CommandLineRunner init(RoleRepository roleRepository, UserRepository userRepository, PasswordEncoder encoder) {
         return args -> {
