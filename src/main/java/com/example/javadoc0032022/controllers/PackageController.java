@@ -2,7 +2,6 @@ package com.example.javadoc0032022.controllers;
 
 import com.example.javadoc0032022.models.Package;
 import com.example.javadoc0032022.models.User;
-import com.example.javadoc0032022.models.enums.ERole;
 import com.example.javadoc0032022.payload.response.MessageResponse;
 import com.example.javadoc0032022.repository.RoleRepository;
 import com.example.javadoc0032022.services.PackageService;
@@ -71,20 +70,6 @@ public class PackageController {
         List<Package> outgoing = packageService.findOutgoingPackages(user.getId());
         List<Package> drafts = packageService.findAllUserPackages(user.getId()).stream().filter(Package::isDraft).toList();
         List<Package> all = packageService.findAllUserPackages(user.getId());
-
-//        boolean isAdmin = user.getRoles().stream().toList().get(0).getRole().equals(ERole.ROLE_ADMIN);
-//        boolean isEmployee = user.getRoles().stream().toList().get(0).getRole().equals(ERole.ROLE_EMPLOYEE);
-//        boolean isUser  = user.getRoles().stream().toList().get(0).getRole().equals(ERole.ROLE_USER);
-
-
-
-//        if (isAdmin || isEmployee) {
-//            outgoing.addAll(packageService.findAll().stream().filter(x -> x.getReceiverUser() != null).toList());
-//            incoming.addAll(packageService.findAll().stream().filter(x -> x.getSenderUser() != null).toList());
-//        } else if (isUser) {
-//            incoming.addAll(packageService.findAll().stream().filter(x -> x.getSenderUser() != null &&
-//                    x.getReceiverUser().equals(user)).toList());
-//        }
 
 
         return ResponseEntity.ok(Map.of(

@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -31,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,11 +41,8 @@ import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/api/doc")
+@AllArgsConstructor
 public class DocumentController {
-
-    //    private static final String NEW_DOC_FILE = "src/main/resources/static/documents/docECP.docx";
-//    @Value("${documents.files}")
-//    private String docPath;
     private final DocumentService documentService;
     private final UserService userService;
     private final RoleRepository roleRepository;
@@ -51,15 +50,6 @@ public class DocumentController {
     private final OperationsHistoryRepository operationsHistoryRepository;
     private final EmailSender emailSender;
 
-    public DocumentController(DocumentService documentService, UserService userService, RoleRepository roleRepository,
-                              PackageService packageService, OperationsHistoryRepository operationsHistoryRepository, EmailSender emailSender) {
-        this.documentService = documentService;
-        this.userService = userService;
-        this.roleRepository = roleRepository;
-        this.packageService = packageService;
-        this.operationsHistoryRepository = operationsHistoryRepository;
-        this.emailSender = emailSender;
-    }
 
     @GetMapping
     public ResponseEntity<List<Package>> getDocuments(@RequestParam(value = "revers", required = false, defaultValue = "false")
@@ -198,7 +188,7 @@ public class DocumentController {
         pack.setPackageType(type);
         pack.setDraft(false);
         pack.setPackageStatus(DocumentStatus.NOT_SIGNED);
-        pack.setCreateAt(LocalDateTime.now());
+        pack.setCreateAt(Instant.now());
 
         for (MultipartFile item : file) {
             String nameFile = StringUtils.cleanPath(item.getOriginalFilename());
@@ -381,22 +371,26 @@ public class DocumentController {
             switch (index) {
                 case 0 -> {
                     pack.get().setPackageStatus(DocumentStatus.AGREED);
+                    pack.get().getDocuments().forEach(x -> x.setStatus(DocumentStatus.AGREED));
                     operationsHistory.setOperationName(String.format("Пользователь %s согласовал пакет %s",
                             user.getName(), pack.get().getName()));
                 }
                 case 1 -> {
                     pack.get().setPackageStatus(DocumentStatus.SIGNED);
+                    pack.get().getDocuments().forEach(x -> x.setStatus(DocumentStatus.SIGNED));
                     operationsHistory.setOperationName(String.format("Пользователь %s подписал пакет %s",
                             user.getName(), pack.get().getName()));
                 }
 
                 case 2 -> {
                     pack.get().setPackageStatus(DocumentStatus.DENIED);
+                    pack.get().getDocuments().forEach(x -> x.setStatus(DocumentStatus.DENIED));
                     operationsHistory.setOperationName(String.format("Пользователь %s отказал пакет %s",
                             user.getName(), pack.get().getName()));
                 }
                 case 3 -> {
                     pack.get().setPackageStatus(DocumentStatus.REJECTED);
+                    pack.get().getDocuments().forEach(x -> x.setStatus(DocumentStatus.REJECTED));
                     operationsHistory.setOperationName(String.format("Пользователь %s отколнил пакет %s",
                             user.getName(), pack.get().getName()));
                 }
