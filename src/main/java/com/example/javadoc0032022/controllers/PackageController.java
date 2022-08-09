@@ -34,8 +34,11 @@ public class PackageController {
             pageTuts = packageService.findByPackageName(pageable, searchByName);
         } else pageTuts = packageService.findAllPage(pageable);
 
+        List<Package> pack = pageTuts.getContent();
+        Collections.reverse(pack);
+
         Map<String, Object> response = new HashMap<>();
-        response.put("packages", pageTuts.getContent());
+        response.put("packages", pack);
         response.put("currentPage", pageTuts.getNumber());
         response.put("totalItems", pageTuts.getTotalElements());
         response.put("totalPages", pageTuts.getTotalPages());

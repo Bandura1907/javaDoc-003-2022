@@ -35,12 +35,12 @@ public interface PackageRepository extends JpaRepository<Package, Integer>, Pagi
             "p.packageStatus = 'SEND_FOR_APPROVAL'")
     List<Package> findPackagesSending();
 
-    @Query("SELECT p FROM Package p WHERE p.senderUser.id = :userId")
+    @Query("SELECT p FROM Package p WHERE p.senderUser.id = :userId ORDER BY p.id DESC")
     List<Package> findOutgoingPackages(@Param("userId") int userId);
 
-    @Query("SELECT p FROM Package p WHERE p.receiverUser.id = :userId")
+    @Query("SELECT p FROM Package p WHERE p.receiverUser.id = :userId ORDER BY p.id DESC")
     List<Package> findIncomingPackages(@Param("userId") int userId);
 
-    @Query("SELECT p FROM Package p WHERE p.receiverUser.id = :userId OR p.senderUser.id = :userId")
+    @Query("SELECT p FROM Package p WHERE p.receiverUser.id = :userId OR p.senderUser.id = :userId ORDER BY p.id DESC")
     List<Package> findAllUserPackages(@Param("userId") int userId);
 }
