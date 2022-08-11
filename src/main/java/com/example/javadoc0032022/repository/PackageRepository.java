@@ -43,4 +43,7 @@ public interface PackageRepository extends JpaRepository<Package, Integer>, Pagi
 
     @Query("SELECT p FROM Package p WHERE p.receiverUser.id = :userId OR p.senderUser.id = :userId ORDER BY p.id DESC")
     List<Package> findAllUserPackages(@Param("userId") int userId);
+
+    @Query("SELECT p FROM Package p WHERE p.receiverUser.id = :userId OR p.senderUser.id = :userId ORDER BY p.id DESC")
+    Page<Package> findAllUserPackagesPage(@Param("userId") int userId, Pageable pageable);
 }

@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/history")
 @AllArgsConstructor
@@ -21,6 +24,13 @@ public class OperationsHistoryController {
     @GetMapping
     public ResponseEntity<?> getAllOperations(@RequestParam(defaultValue = "0") int page) {
         Page<OperationsHistory> pageTuts = operationsHistoryRepository.findAll(PageRequest.of(page, 10));
-        return ResponseEntity.ok(pageTuts.getContent());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("packages", pageTuts.getContent());
+        response.put("currentPage", pageTuts.getNumber());
+        response.put("totalItems", pageTuts.getTotalElements());
+        response.put("totalPages", pageTuts.getTotalPages());
+
+        return ResponseEntity.ok(response);
     }
 }

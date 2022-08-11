@@ -29,6 +29,9 @@ public class Document {
 
     private LocalDateTime createAt;
 
+    private boolean employeeSigned;
+    private boolean clientSigned;
+
     @Lob
     @JsonIgnore
     private byte[] file;

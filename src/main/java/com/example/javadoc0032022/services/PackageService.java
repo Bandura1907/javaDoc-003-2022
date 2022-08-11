@@ -42,6 +42,10 @@ public class PackageService {
         return packageRepository.findAll(pageable);
     }
 
+    public Page<Package> findAllUserPackagesPage(int userId, Pageable pageable) {
+        return packageRepository.findAllUserPackagesPage(userId, pageable);
+    }
+
     public Page<Package> findByPackageName(Pageable pageable, String name) {
         return packageRepository.findByPackageName(pageable, name);
     }

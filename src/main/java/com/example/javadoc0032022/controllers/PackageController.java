@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/package")
@@ -26,16 +27,18 @@ public class PackageController {
 
     @GetMapping
     public ResponseEntity<?> findAll(@RequestParam(defaultValue = "0") int page,
-                                     @RequestParam(required = false) String searchByName) {
+                                     @RequestParam(required = false) String searchByName,
+                                     @AuthenticationPrincipal User user) {
         Pageable pageable = PageRequest.of(page, 10);
         Page<Package> pageTuts;
 
         if (searchByName != null) {
             pageTuts = packageService.findByPackageName(pageable, searchByName);
-        } else pageTuts = packageService.findAllPage(pageable);
+        } else pageTuts = packageService.findAllUserPackagesPage(user.getId(), pageable);
 
-        List<Package> pack = pageTuts.getContent();
-        Collections.reverse(pack);
+        List<Package> pack = pageTuts.getContent().stream().sorted((x, y) -> y.getId() - x.getId())
+                .collect(Collectors.toList());
+
 
         Map<String, Object> response = new HashMap<>();
         response.put("packages", pack);
